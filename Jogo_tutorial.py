@@ -9,7 +9,7 @@ pygame.init()  # Inicia os recursos do pygame.
 largura_janela = 1000  # Define a largura da janela em pixels.
 altura_janela = 680  # Define a altura da janela em pixels.
 janela = pygame.display.set_mode((largura_janela, altura_janela))  # Cria a janela.
-pygame.display.set_caption('Trilha dos desafios - Etapa 2')  # Define o título.
+pygame.display.set_caption('Trilha dos Desafios')  # Define o título.
 
 # ----- Define cores e fontes
 cor_fundo = (245, 242, 230)  # Define o fundo claro.
@@ -68,6 +68,16 @@ def cria_jogadores(quantidade):  # Recebe quantas pessoas jogarão e devolve seu
 def rola_dado():  # Sorteia o resultado de um lançamento.
     return random.randint(1, 6)  # Devolve um inteiro entre 1 e 6, incluindo os extremos.
 
+def desenha_texto(texto, fonte, cor, esquerda, topo):  # Recebe conteúdo, aparência e posição.
+    texto_desenhado = fonte.render(texto, True, cor)  # Transforma o texto em uma superfície.
+    janela.blit(texto_desenhado, (esquerda, topo))  # Coloca o texto na janela.
+
+
+def desenha_texto_centralizado(texto, fonte, cor, centro_horizontal, topo):  # Recebe o texto, sua aparência, o centro desejado e a altura.
+    texto_desenhado = fonte.render(texto, True, cor)  # Prepara o texto para desenhar e medir.
+    largura_texto = texto_desenhado.get_width()  # Obtém a largura real da frase em pixels.
+    esquerda = centro_horizontal - largura_texto // 2  # Coloca metade da largura de cada lado do centro.
+    janela.blit(texto_desenhado, (esquerda, topo))  # Desenha o texto centralizado sem alterar sua altura.
 
 # ----- Define funções de desenho
 def desenha_texto(texto, fonte, cor, esquerda, topo):  # Recebe conteúdo, aparência e posição.
@@ -76,15 +86,14 @@ def desenha_texto(texto, fonte, cor, esquerda, topo):  # Recebe conteúdo, apar�
 
 
 def desenha_menu():  # Mostra as opções de quantidade de jogadores.
-    desenha_texto('TRILHA DOS DESAFIOS', fonte_titulo, cor_texto, 290, 160)  # Mostra o título.
-    desenha_texto('Escolha quantas pessoas vão jogar:', fonte_normal, cor_texto, 320, 230)  # Orienta a escolha.
+    desenha_texto_centralizado('TRILHA DOS DESAFIOS', fonte_titulo, cor_texto, largura_janela // 2, 160)  # Centraliza o título na janela.
+    desenha_texto_centralizado('Escolha quantas pessoas vão jogar:', fonte_normal, cor_texto, largura_janela // 2, 230)  # Centraliza a instrução na janela.
     pygame.draw.rect(janela, cores_casas[1], botao_um_jogador)  # Desenha a primeira opção.
     pygame.draw.rect(janela, cores_casas[2], botao_dois_jogadores)  # Desenha a segunda opção.
     pygame.draw.rect(janela, cor_texto, botao_um_jogador, 2)  # Contorna o primeiro botão.
     pygame.draw.rect(janela, cor_texto, botao_dois_jogadores, 2)  # Contorna o segundo botão.
     desenha_texto('1 jogador', fonte_normal, cor_texto, 450, 303)  # Identifica o primeiro botão.
     desenha_texto('2 jogadores', fonte_normal, cor_texto, 440, 393)  # Identifica o segundo botão.
-    desenha_texto('Etapa 2: tabuleiro, peças e dado.', fonte_pequena, cor_texto, 365, 490)  # Explica esta versão.
 
 
 def desenha_tabuleiro():  # Desenha o percurso fixo e suas vinte casas.
@@ -148,10 +157,10 @@ def desenha_painel():  # Mostra participantes, instruções e resultado do lanç
         altura_legenda = 175 + indice * 55  # Separa verticalmente os nomes.
         desenha_personagem(780, altura_legenda, jogador['cor'])  # Mostra a peça ao lado do nome.
         desenha_texto(jogador['nome'], fonte_pequena, cor_texto, 815, altura_legenda + 6)  # Mostra o nome.
-    desenha_texto('Clique no dado.', fonte_normal, cor_texto, 780, 320)  # Explica o controle.
-    desenha_texto('As peças se moverão', fonte_pequena, cor_texto, 780, 360)  # Explica o limite da etapa.
-    desenha_texto('na próxima etapa.', fonte_pequena, cor_texto, 780, 385)  # Completa a explicação.
-    desenha_texto(mensagem_dado, fonte_pequena, cor_texto, 780, 440)  # Exibe o resultado ou o convite.
+    desenha_texto('Clique no dado.', fonte_normal, cor_texto, 796, 320)  # Explica o controle.
+    desenha_texto('As peças se moverão', fonte_pequena, cor_texto, 796, 360)  # Explica o limite da etapa.
+    desenha_texto('na próxima etapa.', fonte_pequena, cor_texto, 806, 385)  # Completa a explicação.
+    desenha_texto(mensagem_dado, fonte_pequena, cor_texto, 800, 440)  # Exibe o resultado ou o convite.
     desenha_dado()  # Mostra o dado na parte inferior direita.
 
 
@@ -208,7 +217,6 @@ while jogo_ativo:  # Repete eventos, lógica e saídas enquanto a janela estiver
             desenha_menu()  # Desenha as opções de participantes.
         elif estado == 'tabuleiro':  # Verifica se o tabuleiro deve aparecer.
             desenha_texto('TRILHA DOS DESAFIOS', fonte_titulo, cor_texto, 35, 25)  # Desenha o título.
-            desenha_texto('Etapa 2 | Percurso fixo de 20 casas', fonte_pequena, cor_texto, 37, 73)  # Identifica a versão.
             desenha_tabuleiro()  # Desenha as casas e o caminho.
             desenha_pecas()  # Desenha os jogadores sobre as casas.
             desenha_painel()  # Desenha as instruções e o dado.
