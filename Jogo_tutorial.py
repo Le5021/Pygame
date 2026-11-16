@@ -6,8 +6,8 @@ import random  # Permite sortear o valor do dado.
 pygame.init()  # Inicia os recursos do pygame.
 
 # ----- Gera tela principal
-largura_janela = 1000  # Define a largura da janela em pixels.
-altura_janela = 680  # Define a altura da janela em pixels.
+largura_janela = 1920  # Define a largura da janela em pixels.
+altura_janela = 1080  # Define a altura da janela em pixels.
 janela = pygame.display.set_mode((largura_janela, altura_janela), pygame.FULLSCREEN)  # Abre o jogo em tela cheia.
 largura_janela = janela.get_width()  # Consulta a largura efetiva caso o computador ajuste o modo de tela cheia.
 altura_janela = janela.get_height()  # Consulta a altura efetiva para posicionar a saída junto ao rodapé.
@@ -150,7 +150,7 @@ def texto_efeito(efeito):  # Recebe os dados de uma casa especial e devolve seu 
     quantidade = str(efeito['passos']) + ' ' + palavra_casas  # Monta a quantidade por escrito.
     if efeito['tipo'] == 'avanca':  # Identifica a casa que faz avançar.
         return 'Parabéns! Você avançará ' + quantidade + ' XD'  # Entrega o aviso de avanço.
-    return 'Ihh, você recuará ' + quantidade + ' :/'  # Entrega o aviso de recuo.
+    return 'Ihh, você recuará ' + quantidade + 'casas'
 
 
 def prepara_resultado(partida, mensagem, agora):  # Recebe a partida, uma mensagem e o instante atual.
