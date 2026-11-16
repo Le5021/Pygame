@@ -8,12 +8,15 @@ pygame.init()  # Inicia os recursos do pygame.
 # ----- Gera tela principal
 largura_janela = 1000  # Define a largura da janela em pixels.
 altura_janela = 680  # Define a altura da janela em pixels.
-janela = pygame.display.set_mode((largura_janela, altura_janela), pygame.FULLSCREEN) # Cria a janela.
-pygame.display.set_caption('Trilha dos desafios - Etapa 3')  # Define o título.
+janela = pygame.display.set_mode((largura_janela, altura_janela), pygame.FULLSCREEN)  # Abre o jogo em tela cheia.
+largura_janela = janela.get_width()  # Consulta a largura efetiva caso o computador ajuste o modo de tela cheia.
+altura_janela = janela.get_height()  # Consulta a altura efetiva para posicionar a saída junto ao rodapé.
+pygame.display.set_caption('Trilha dos desafios - Etapa 4A')  # Define o título.
 
 # ----- Define cores e fontes
 cor_fundo = (245, 242, 230)  # Define o fundo claro.
 cor_texto = (30, 42, 52)  # Define a cor escura dos textos e contornos.
+cor_sair = (190, 35, 50)  # Define o vermelho do botão de saída e dos avisos de tempo.
 cor_branca = (255, 255, 255)  # Define o branco do dado e dos olhos.
 cor_preta = (0, 0, 0)  # Define o preto das bolinhas do dado.
 cor_sombra = (207, 199, 178)  # Define a sombra das casas.
@@ -107,7 +110,8 @@ def cria_partida(quantidade):  # Recebe a quantidade de pessoas e reúne os dado
         'casa_aviso': -1,  # Indica que ainda não existe uma casa aguardando confirmação.
         'mensagem_aviso': '',  # Guarda o texto da caixa de aviso.
         'inicio_resultado': 0,  # Guarda quando começou a mensagem de fim do turno.
-        'vencedor': ''  # Guarda o nome de quem alcançar a chegada.
+        'vencedor': '',  # Guarda o nome de quem alcançar a chegada.
+        'atividade': {}  # Aguarda os dados do desafio atual.
     }
     return dados  # Entrega a partida pronta para começar.
 
@@ -166,8 +170,11 @@ def resolve_parada(partida, agora):  # Analisa a casa de parada e devolve o pró
             partida['casa_aviso'] = posicao  # Registra qual casa aguarda confirmação.
             partida['mensagem_aviso'] = texto_efeito(partida['casas_especiais'][posicao])  # Prepara o aviso.
             return 'aviso'  # Abre a caixa sem revelar ou aplicar o efeito ainda.
+    if partida['origem_movimento'] == 'dado':  # Abre um desafio somente em uma parada comum do dado.
+        prepara_atividade(partida, agora)  # Prepara quatro pares e inicia o cronômetro de vinte segundos.
+        return 'atividade'  # Troca o tabuleiro pela tela do desafio.
     prepara_resultado(partida, 'Parou na casa ' + str(posicao + 1) + '.', agora)  # Mostra onde o movimento terminou.
-    return 'resultado'  # Encerra o turno; as atividades serão incluídas na Etapa 4.
+    return 'resultado'  # Encerra um movimento especial ou uma penalidade sem abrir outro desafio.
 
 
 def aplica_casa_especial(partida, agora):  # Aplica o efeito apenas depois de o aviso ser fechado.
@@ -191,6 +198,109 @@ def troca_turno(partida):  # Recebe a partida e escolhe quem lançará o próxim
     partida['mensagem'] = 'Pronto para lançar!'  # Prepara a instrução do novo turno.
 
 
+
+# ----- Define funções da atividade de pontos
+def cria_pontos():  # Devolve oito pontos, formando quatro pares de cores iguais.
+    cores_pontos = [(210, 55, 75), (40, 110, 210), (35, 155, 95), (235, 175, 25)]  # Define quatro cores distintas.
+    pontos = []  # Prepara a lista de pontos do desafio.
+    for coluna in range(2):  # Cria uma coluna de pontos em cada lado da área do desafio.
+        cores_coluna = cores_pontos[:]  # Copia a lista para embaralhar sem alterar as cores originais.
+        random.shuffle(cores_coluna)  # Sorteia a ordem das quatro cores nesta coluna.
+        for linha in range(4):  # Distribui os quatro pontos de cada coluna.
+            ponto = {  # Reúne os dados de um ponto.
+                'centro': (largura_janela // 2 - 220 + coluna * 440, 220 + linha * 90),  # Centraliza as duas colunas sem sobrepor pontos.
+                'cor': cores_coluna[linha],  # Define a cor que identifica o par.
+                'ligado': False  # Registra que o ponto ainda não foi conectado.
+            }
+            pontos.append(ponto)  # Acrescenta o ponto à lista.
+    return pontos  # Entrega os oito pontos prontos para desenhar.
+
+
+def prepara_atividade(partida, agora):  # Recebe a partida e o instante em que o desafio começa.
+    partida['atividade'] = {  # Substitui os dados de qualquer desafio anterior.
+        'pontos': cria_pontos(),  # Cria uma nova organização dos pares.
+        'ligacoes': [],  # Guarda os pares de índices que já foram conectados.
+        'selecionado': -1,  # Usa -1 para indicar que nenhum ponto está selecionado.
+        'inicio': agora,  # Guarda o início do cronômetro em milissegundos.
+        'limite': 20000,  # Define o prazo de vinte segundos.
+        'mensagem': 'Clique em um ponto e depois no outro da mesma cor.',  # Explica o primeiro passo.
+        'resultado': '',  # Mantém o desafio sem resultado enquanto estiver em andamento.
+        'tempo_final': 20  # Guarda o tempo a exibir depois que o desafio terminar.
+    }
+
+
+def calcula_tempo_restante(atividade, agora):  # Recebe o desafio e o tempo atual; devolve os segundos restantes.
+    milissegundos = atividade['limite'] - (agora - atividade['inicio'])  # Desconta o tempo já utilizado.
+    if milissegundos < 0:  # Verifica se o limite já foi ultrapassado.
+        milissegundos = 0  # Evita exibir valores negativos no cronômetro.
+    return (milissegundos + 999) // 1000  # Arredonda para cima para mostrar zero somente ao terminar o prazo.
+
+
+def encontra_ponto(pontos, posicao_mouse):  # Recebe os pontos e um clique; devolve o índice atingido ou -1.
+    for indice in range(len(pontos)):  # Examina a área circular de cada ponto.
+        centro = pontos[indice]['centro']  # Consulta o centro do ponto.
+        diferenca_horizontal = posicao_mouse[0] - centro[0]  # Mede a distância horizontal até o clique.
+        diferenca_vertical = posicao_mouse[1] - centro[1]  # Mede a distância vertical até o clique.
+        if diferenca_horizontal ** 2 + diferenca_vertical ** 2 <= raio_ponto ** 2:  # Verifica se o clique está dentro do círculo.
+            return indice  # Informa qual ponto foi atingido.
+    return -1  # Indica que o clique aconteceu fora dos pontos.
+
+
+def trata_clique_pontos(atividade, posicao_mouse):  # Recebe o desafio e trata um clique sem encerrar a atividade.
+    indice = encontra_ponto(atividade['pontos'], posicao_mouse)  # Descobre qual ponto foi clicado.
+    if indice == -1:  # Verifica se o clique atingiu apenas o fundo.
+        return  # Ignora o clique fora dos pontos.
+    ponto = atividade['pontos'][indice]  # Consulta o ponto atingido.
+    if ponto['ligado']:  # Verifica se esse ponto já pertence a uma conexão concluída.
+        return  # Impede reutilizar um ponto já conectado.
+    selecionado = atividade['selecionado']  # Consulta o primeiro ponto escolhido.
+    if selecionado == -1:  # Verifica se a pessoa está escolhendo o primeiro ponto do par.
+        atividade['selecionado'] = indice  # Destaca o ponto escolhido.
+        atividade['mensagem'] = 'Agora clique no outro ponto da mesma cor.'  # Orienta o segundo clique.
+    elif selecionado == indice:  # Verifica se a pessoa clicou novamente no mesmo ponto.
+        atividade['selecionado'] = -1  # Cancela a seleção, sem criar uma ligação consigo mesmo.
+        atividade['mensagem'] = 'Seleção cancelada. Escolha outro ponto.'  # Explica o cancelamento.
+    elif ponto['cor'] == atividade['pontos'][selecionado]['cor']:  # Confere se as duas cores combinam.
+        atividade['ligacoes'].append((selecionado, indice))  # Registra uma linha permanente entre os pontos.
+        atividade['pontos'][selecionado]['ligado'] = True  # Marca o primeiro ponto como concluído.
+        ponto['ligado'] = True  # Marca o segundo ponto como concluído.
+        atividade['selecionado'] = -1  # Libera a escolha de outro par.
+        atividade['mensagem'] = 'Par conectado! Escolha o próximo.'  # Confirma a conexão.
+    else:  # Trata a tentativa de ligar cores diferentes.
+        atividade['mensagem'] = 'Cores diferentes. Procure o par do ponto destacado.'  # Mantém a primeira seleção e permite tentar novamente.
+
+
+def verifica_pontos(atividade):  # Recebe o desafio e verifica se todos os pares foram conectados.
+    return len(atividade['ligacoes']) == len(atividade['pontos']) // 2  # Exige quatro pares completos.
+
+
+def conclui_atividade(partida, resultado, mensagem, agora):  # Recebe a partida, o resultado, sua mensagem e o tempo atual.
+    atividade = partida['atividade']  # Consulta os dados do desafio.
+    atividade['resultado'] = resultado  # Guarda 'sucesso' ou 'falha'.
+    atividade['mensagem'] = mensagem  # Prepara a mensagem visível ao participante.
+    atividade['tempo_final'] = calcula_tempo_restante(atividade, agora)  # Congela o cronômetro ao terminar.
+    atividade['selecionado'] = -1  # Remove qualquer destaque de seleção.
+    partida['inicio_resultado'] = agora  # Inicia a breve exibição do resultado do desafio.
+
+
+def atualiza_atividade(partida, cliques, desistir, agora):  # Recebe os pedidos do frame e devolve o próximo estado.
+    atividade = partida['atividade']  # Consulta o desafio em andamento.
+    if agora - atividade['inicio'] >= atividade['limite']:  # Confere o prazo antes de aceitar qualquer resposta.
+        conclui_atividade(partida, 'falha', 'Tempo esgotado! Você voltará uma casa.', agora)  # Registra a falha por tempo.
+        return 'resultado_atividade'  # Mostra a falha antes de aplicar a penalidade.
+    if desistir:  # Verifica se o botão de desistência foi clicado.
+        conclui_atividade(partida, 'falha', 'Você desistiu. Voltará uma casa.', agora)  # Registra a desistência.
+        return 'resultado_atividade'  # Mostra a consequência antes do recuo.
+    for posicao_mouse in cliques:  # Trata os cliques recebidos neste frame na ordem de chegada.
+        if atividade['resultado'] == '':  # Impede processar cliques adicionais depois de vencer.
+            trata_clique_pontos(atividade, posicao_mouse)  # Tenta selecionar ou conectar os pontos.
+            if verifica_pontos(atividade):  # Verifica se o último par foi concluído.
+                conclui_atividade(partida, 'sucesso', 'Muito bem! Você conectou todos os pares.', agora)  # Registra o sucesso.
+    if atividade['resultado'] == 'sucesso':  # Verifica se o desafio acabou durante os cliques.
+        return 'resultado_atividade'  # Mantém as linhas completas visíveis por um breve intervalo.
+    return 'atividade'  # Continua recebendo cliques até o sucesso ou o fim do prazo.
+
+
 # ----- Define funções de desenho
 def desenha_texto(texto, fonte, cor, esquerda, topo):  # Recebe conteúdo, aparência e posição.
     texto_desenhado = fonte.render(texto, True, cor)  # Transforma o texto em uma superfície.
@@ -211,9 +321,9 @@ def desenha_menu():  # Mostra as opções de quantidade de jogadores.
     pygame.draw.rect(janela, cores_casas[2], botao_dois_jogadores)  # Desenha a segunda opção.
     pygame.draw.rect(janela, cor_texto, botao_um_jogador, 2)  # Contorna o primeiro botão.
     pygame.draw.rect(janela, cor_texto, botao_dois_jogadores, 2)  # Contorna o segundo botão.
-    desenha_texto('1 jogador', fonte_normal, cor_texto, 450, 303)  # Identifica o primeiro botão.
-    desenha_texto('2 jogadores', fonte_normal, cor_texto, 440, 393)  # Identifica o segundo botão.
-    desenha_texto_centralizado('Etapa 3: movimento, turnos e surpresas.', fonte_pequena, cor_texto, largura_janela // 2, 490)  # Explica esta versão.
+    desenha_texto_centralizado('1 jogador', fonte_normal, cor_texto, botao_um_jogador.centerx, 303)  # Centraliza o nome no primeiro botão.
+    desenha_texto_centralizado('2 jogadores', fonte_normal, cor_texto, botao_dois_jogadores.centerx, 393)  # Centraliza o nome no segundo botão.
+    desenha_texto_centralizado('Etapa 4A: conecte os pontos da mesma cor.', fonte_pequena, cor_texto, largura_janela // 2, 490)  # Explica esta versão.
 
 
 def desenha_tabuleiro(partida):  # Recebe a partida e desenha as casas com os efeitos já revelados.
@@ -240,7 +350,7 @@ def desenha_tabuleiro(partida):  # Recebe a partida e desenha as casas com os ef
         pygame.draw.rect(janela, cor_texto, casa, 2)  # Desenha o contorno.
         desenha_texto(str(indice + 1), fonte_normal, cor_texto, casa.x + 6, casa.y + 4)  # Mostra o número de 1 a 20.
         desenha_texto_centralizado(simbolo, fonte_pequena, cor_texto, casa.centerx + 13, casa.y + 8)  # Deixa o símbolo acima das peças.
-    desenha_texto('INÍCIO', fonte_pequena, cor_texto, 50, 625)  # Marca a primeira casa.
+    desenha_texto('INÍCIO', fonte_pequena, cor_texto, 45, 515)  # Marca o início acima da casa e deixa o rodapé livre para a saída.
     desenha_texto('CHEGADA', fonte_pequena, cor_texto, 630, 195)  # Marca a última casa.
 
 
@@ -312,9 +422,9 @@ def desenha_painel(partida, estado):  # Recebe a partida e o estado para mostrar
 
 
 def desenha_caixa(titulo, mensagem, texto_botao):  # Recebe os textos do aviso ou da vitória.
-    pygame.draw.rect(janela, cor_sombra, (168, 213, 680, 250))  # Desenha a sombra da caixa.
-    pygame.draw.rect(janela, cor_branca, (160, 205, 680, 250))  # Desenha a caixa sobre o tabuleiro.
-    pygame.draw.rect(janela, cor_texto, (160, 205, 680, 250), 3)  # Desenha o contorno da caixa.
+    pygame.draw.rect(janela, cor_sombra, (largura_janela // 2 - 332, 213, 680, 250))  # Desenha a sombra da caixa centralizada.
+    pygame.draw.rect(janela, cor_branca, (largura_janela // 2 - 340, 205, 680, 250))  # Desenha a caixa sobre o tabuleiro.
+    pygame.draw.rect(janela, cor_texto, (largura_janela // 2 - 340, 205, 680, 250), 3)  # Desenha o contorno da caixa.
     desenha_texto_centralizado(titulo, fonte_titulo, cor_texto, largura_janela // 2, 235)  # Centraliza o título.
     desenha_texto_centralizado(mensagem, fonte_normal, cor_texto, largura_janela // 2, 300)  # Centraliza o aviso.
     pygame.draw.rect(janela, cores_casas[1], botao_confirmar)  # Desenha o botão de confirmação.
@@ -323,13 +433,62 @@ def desenha_caixa(titulo, mensagem, texto_botao):  # Recebe os textos do aviso o
     desenha_texto_centralizado('Clique no botão ou pressione Enter.', fonte_pequena, cor_texto, largura_janela // 2, 430)  # Explica os dois controles.
 
 
+
+def desenha_atividade(partida, agora):  # Recebe a partida e o tempo atual para desenhar o desafio.
+    atividade = partida['atividade']  # Consulta os pontos, as ligações e o resultado.
+    jogador = partida['jogadores'][partida['jogador_atual']]  # Identifica quem deve resolver o desafio.
+    tempo = calcula_tempo_restante(atividade, agora)  # Calcula os segundos disponíveis.
+    if atividade['resultado'] != '':  # Verifica se o desafio já terminou.
+        tempo = atividade['tempo_final']  # Mantém o tempo congelado durante a mensagem final.
+    cor_cronometro = cor_texto  # Define a cor normal do cronômetro.
+    if tempo <= 5:  # Destaca os últimos cinco segundos.
+        cor_cronometro = cor_sair  # Muda o cronômetro para vermelho.
+    desenha_texto(jogador['nome'], fonte_normal, jogador['cor'], 35, 35)  # Mostra o participante da vez.
+    desenha_texto_centralizado('CONECTE AS CORES', fonte_titulo, cor_texto, largura_janela // 2, 25)  # Apresenta o desafio.
+    desenha_texto_centralizado('Tempo: ' + str(tempo) + ' s', fonte_normal, cor_cronometro, largura_janela - 125, 35)  # Mostra o cronômetro visível.
+    desenha_texto_centralizado('Clique em dois pontos da mesma cor para conectá-los.', fonte_normal, cor_texto, largura_janela // 2, 90)  # Explica o controle.
+    desenha_texto_centralizado('Complete os quatro pares. As linhas podem se cruzar.', fonte_pequena, cor_texto, largura_janela // 2, 123)  # Explica a condição de sucesso.
+    pygame.draw.rect(janela, cor_branca, (largura_janela // 2 - 340, 170, 680, 365))  # Desenha a área dos pontos.
+    pygame.draw.rect(janela, cor_sombra, (largura_janela // 2 - 340, 170, 680, 365), 2)  # Contorna a área do desafio.
+    for ligacao in atividade['ligacoes']:  # Percorre as conexões já concluídas.
+        primeiro = atividade['pontos'][ligacao[0]]  # Consulta o ponto inicial da linha.
+        segundo = atividade['pontos'][ligacao[1]]  # Consulta o ponto final da linha.
+        pygame.draw.line(janela, primeiro['cor'], primeiro['centro'], segundo['centro'], 7)  # Desenha a conexão abaixo dos pontos.
+    for indice in range(len(atividade['pontos'])):  # Percorre os oito pontos do desafio.
+        ponto = atividade['pontos'][indice]  # Consulta a aparência e a posição do ponto.
+        centro = ponto['centro']  # Guarda o centro para os desenhos seguintes.
+        pygame.draw.circle(janela, cor_branca, centro, raio_ponto + 5)  # Separa o ponto das linhas que passam por ele.
+        pygame.draw.circle(janela, ponto['cor'], centro, raio_ponto)  # Desenha o ponto colorido.
+        pygame.draw.circle(janela, cor_texto, centro, raio_ponto, 2)  # Desenha o contorno do ponto.
+        if indice == atividade['selecionado']:  # Verifica se esse é o primeiro ponto selecionado.
+            pygame.draw.circle(janela, cor_texto, centro, raio_ponto + 9, 3)  # Destaca a seleção com um anel.
+        if ponto['ligado']:  # Verifica se a conexão desse ponto está concluída.
+            pygame.draw.line(janela, cor_branca, (centro[0] - 8, centro[1]), (centro[0] - 2, centro[1] + 6), 3)  # Desenha o começo do sinal de confirmação.
+            pygame.draw.line(janela, cor_branca, (centro[0] - 2, centro[1] + 6), (centro[0] + 9, centro[1] - 7), 3)  # Completa o sinal de confirmação.
+    desenha_texto_centralizado('Pares conectados: ' + str(len(atividade['ligacoes'])) + '/4', fonte_normal, cor_texto, largura_janela // 2, 552)  # Mostra o progresso.
+    desenha_texto_centralizado(atividade['mensagem'], fonte_pequena, cor_texto, largura_janela // 2, 595)  # Mostra instruções, erros ou o resultado.
+    if atividade['resultado'] == '':  # Mantém o botão de desistência somente durante o desafio.
+        pygame.draw.rect(janela, cor_painel, botao_desistir)  # Desenha o fundo do botão.
+        pygame.draw.rect(janela, cor_texto, botao_desistir, 2)  # Contorna o botão de desistência.
+        desenha_texto_centralizado('Desistir', fonte_pequena, cor_texto, botao_desistir.centerx, botao_desistir.y + 12)  # Identifica a ação.
+
+
+def desenha_botao_sair():  # Desenha uma saída permanente em todas as telas.
+    pygame.draw.rect(janela, cor_sair, botao_sair)  # Cria o bloco vermelho afastado das margens.
+    pygame.draw.rect(janela, cor_texto, botao_sair, 2)  # Contorna o bloco para destacá-lo.
+    desenha_texto_centralizado('Sair/Esc', fonte_pequena, cor_branca, botao_sair.centerx, botao_sair.y + 10)  # Mostra o comando de saída.
+
+
 # ----- Inicia estruturas de dados
 casas = cria_casas()  # Guarda as vinte casas nas mesmas posições da Etapa 2.
 partida = {}  # Aguarda a escolha do modo para receber os dados da partida.
 retangulo_dado = pygame.Rect(810, 495, 120, 120)  # Define a área do dado.
-botao_um_jogador = pygame.Rect(350, 280, 300, 65)  # Define a primeira opção do menu.
-botao_dois_jogadores = pygame.Rect(350, 370, 300, 65)  # Define a segunda opção do menu.
-botao_confirmar = pygame.Rect(400, 365, 200, 55)  # Define o botão das caixas de aviso.
+botao_um_jogador = pygame.Rect(largura_janela // 2 - 150, 280, 300, 65)  # Centraliza a primeira opção do menu.
+botao_dois_jogadores = pygame.Rect(largura_janela // 2 - 150, 370, 300, 65)  # Centraliza a segunda opção do menu.
+botao_confirmar = pygame.Rect(largura_janela // 2 - 100, 365, 200, 55)  # Centraliza o botão das caixas de aviso.
+botao_sair = pygame.Rect(20, janela.get_height() - 52, 120, 36)  # Posiciona a saída a vinte pixels da esquerda e dezesseis do fundo.
+botao_desistir = pygame.Rect(largura_janela - 150, 550, 120, 42)  # Permite abandonar apenas a atividade atual.
+raio_ponto = 24  # Define o tamanho visual e a área clicável de cada ponto.
 intervalo_passo = 250  # Espera 250 milissegundos entre passos da peça.
 duracao_resultado = 900  # Exibe o fim do turno por 900 milissegundos.
 estado = 'menu'  # Começa na escolha da quantidade de pessoas.
@@ -343,13 +502,18 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
     pedido_dado = False  # Guarda se houve clique válido no dado neste frame.
     pedido_confirmacao = False  # Guarda a confirmação do aviso ou o pedido de jogar novamente.
 
+    cliques_atividade = []  # Guarda os cliques nos pontos recebidos neste frame.
+    pedido_desistir = False  # Guarda se a pessoa escolheu abandonar o desafio.
+
     # ----- Trata eventos
     for evento in pygame.event.get():  # Recebe os eventos pendentes da janela.
         if evento.type == pygame.QUIT:  # Verifica se a janela deve ser fechada.
             jogo_ativo = False  # Solicita o encerramento sem processar novos movimentos.
         elif evento.type == pygame.MOUSEBUTTONDOWN:  # Verifica se houve clique do mouse.
             if evento.button == 1:  # Aceita apenas o botão esquerdo.
-                if estado == 'menu':  # Trata as opções da tela inicial.
+                if botao_sair.collidepoint(evento.pos):  # Verifica a saída antes dos controles de qualquer tela.
+                    jogo_ativo = False  # Encerra o jogo mesmo durante uma animação ou um aviso.
+                elif estado == 'menu':  # Trata as opções da tela inicial.
                     if pedido_inicio == 0:  # Aceita somente a primeira escolha deste frame.
                         if botao_um_jogador.collidepoint(evento.pos):  # Verifica a opção individual.
                             pedido_inicio = 1  # Solicita uma partida com uma pessoa.
@@ -358,11 +522,18 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
                 elif estado == 'tabuleiro':  # Permite lançar somente quando não existe outra ação em andamento.
                     if retangulo_dado.collidepoint(evento.pos):  # Confere a área clicável do dado.
                         pedido_dado = True  # Registra um único pedido, mesmo com vários cliques no frame.
+                elif estado == 'atividade':  # Recebe os controles do desafio de pontos.
+                    if botao_desistir.collidepoint(evento.pos):  # Verifica a desistência da atividade.
+                        pedido_desistir = True  # Solicita a penalidade e o encerramento do turno.
+                    else:  # Guarda os outros cliques para verificar os pontos na lógica do jogo.
+                        cliques_atividade.append(evento.pos)  # Mantém a ordem dos cliques recebidos.
                 elif estado == 'aviso' or estado == 'fim':  # Trata somente o botão da caixa aberta.
                     if botao_confirmar.collidepoint(evento.pos):  # Verifica se o botão foi atingido.
                         pedido_confirmacao = True  # Solicita a ação do botão: continuar ou jogar novamente.
         elif evento.type == pygame.KEYDOWN:  # Verifica o pressionamento de uma tecla.
-            if evento.key == pygame.K_RETURN:  # Reconhece a tecla Enter.
+            if evento.key == pygame.K_ESCAPE:  # Reconhece Esc em qualquer estado do jogo.
+                jogo_ativo = False  # Solicita o fechamento da janela em tela cheia.
+            elif evento.key == pygame.K_RETURN:  # Reconhece a tecla Enter.
                 if estado == 'aviso' or estado == 'fim':  # Aceita Enter apenas nas caixas.
                     pedido_confirmacao = True  # Faz o mesmo que clicar no botão.
 
@@ -385,6 +556,17 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
         elif estado == 'aviso':  # Mantém o efeito pendente enquanto a caixa está aberta.
             if pedido_confirmacao:  # Verifica se a pessoa leu e fechou o aviso.
                 estado = aplica_casa_especial(partida, agora)  # Revela a casa e aplica seu efeito.
+        elif estado == 'atividade':  # Atualiza cliques e prazo sem bloquear a janela.
+            estado = atualiza_atividade(partida, cliques_atividade, pedido_desistir, agora)  # Decide se o desafio continua ou acabou.
+        elif estado == 'resultado_atividade':  # Exibe brevemente as conexões e o resultado antes de voltar ao tabuleiro.
+            if agora - partida['inicio_resultado'] >= duracao_resultado:  # Aguarda a leitura da mensagem.
+                if partida['atividade']['resultado'] == 'sucesso':  # Verifica se todos os pares foram conectados.
+                    troca_turno(partida)  # Passa a vez ou libera novamente o jogador individual.
+                    estado = 'tabuleiro'  # Volta ao tabuleiro sem penalidade.
+                else:  # Aplica a consequência do tempo esgotado ou da desistência.
+                    inicia_movimento(partida, -1, 'penalidade', agora)  # Prepara um recuo de uma casa sem outro desafio no destino.
+                    partida['mensagem'] = 'Voltando uma casa...'  # Explica o recuo no painel.
+                    estado = 'movimento'  # Anima a penalidade antes de encerrar o turno.
         elif estado == 'resultado':  # Mantém a mensagem de fim do turno por um pequeno intervalo.
             if agora - partida['inicio_resultado'] >= duracao_resultado:  # Verifica se a espera terminou.
                 troca_turno(partida)  # Alterna a pessoa ou mantém o jogador individual.
@@ -399,8 +581,11 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
             janela.fill(cor_fundo)  # Limpa os desenhos do frame anterior.
             if estado == 'menu':  # Verifica se a escolha de participantes deve aparecer.
                 desenha_menu()  # Mostra os botões do menu.
+            elif estado == 'atividade' or estado == 'resultado_atividade':  # Verifica se a atividade ou seu resultado deve aparecer.
+                desenha_atividade(partida, agora)  # Desenha os pontos, as linhas e o cronômetro.
             else:  # Desenha o tabuleiro nos demais estados.
                 desenha_texto('TRILHA DOS DESAFIOS', fonte_titulo, cor_texto, 35, 25)  # Mostra o título do tabuleiro.
+                desenha_texto('Etapa 4A | Conecte os pontos em 20 segundos', fonte_pequena, cor_texto, 37, 73)  # Identifica a versão.
                 desenha_tabuleiro(partida)  # Mostra casas comuns e efeitos já revelados.
                 desenha_pecas(partida)  # Mostra as peças nas posições atuais.
                 desenha_painel(partida, estado)  # Mostra o participante da vez e as instruções.
@@ -408,6 +593,7 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
                     desenha_caixa('CASA ESPECIAL', partida['mensagem_aviso'], 'Continuar')  # Sobrepõe o aviso.
                 elif estado == 'fim':  # Verifica se alguém alcançou a última casa.
                     desenha_caixa('CHEGADA!', partida['vencedor'] + ' venceu!', 'Jogar novamente')  # Mostra a vitória e permite começar outra partida.
+            desenha_botao_sair()  # Mantém a saída visível por cima de qualquer tela ou caixa.
             pygame.display.update()  # Apresenta o frame completo na janela.
             relogio.tick(60)  # Limita o loop a sessenta atualizações por segundo.
 
