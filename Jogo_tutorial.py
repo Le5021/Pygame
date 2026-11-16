@@ -8,7 +8,7 @@ pygame.init()  # Inicia os recursos do pygame.
 # ----- Gera tela principal
 largura_janela = 1000  # Define a largura da janela em pixels.
 altura_janela = 680  # Define a altura da janela em pixels.
-janela = pygame.display.set_mode((largura_janela, altura_janela))  # Cria a janela.
+janela = pygame.display.set_mode((largura_janela, altura_janela), pygame.FULLSCREEN) # Cria a janela.
 pygame.display.set_caption('Trilha dos desafios - Etapa 3')  # Define o título.
 
 # ----- Define cores e fontes
