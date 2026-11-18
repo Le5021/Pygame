@@ -12,7 +12,7 @@ altura_janela = 680  # Define a altura da janela em pixels.
 janela = pygame.display.set_mode((largura_janela, altura_janela), pygame.FULLSCREEN)  # Abre o jogo em tela cheia.
 largura_janela = janela.get_width()  # Consulta a largura efetiva caso o computador ajuste o modo de tela cheia.
 altura_janela = janela.get_height()  # Consulta a altura efetiva para posicionar a saída junto ao rodapé.
-pygame.display.set_caption('Trilha dos desafios - Etapa 4C animada')  # Define o título.
+pygame.display.set_caption('Trilha dos desafios - Etapa 4D - dificuldade progressiva')  # Define o título.
 
 # ----- Define cores e fontes
 cor_fundo = (245, 242, 230)  # Define o fundo claro.
@@ -73,7 +73,7 @@ def cria_jogadores(quantidade):  # Recebe quantas pessoas jogarão e devolve seu
 
 
 def rola_dado():  # Sorteia o resultado de um lançamento.
-    return random.randint(1, 3)  # Sorteia somente 1, 2 ou 3, com a mesma chance.
+    return random.randint(1, 4)  # Sorteia somente 1, 2, 3 ou 4, com a mesma chance.
 
 
 
@@ -114,6 +114,7 @@ def cria_partida(quantidade):  # Recebe a quantidade de pessoas e reúne os dado
         'mensagem_aviso': '',  # Guarda o texto da caixa de aviso.
         'inicio_resultado': 0,  # Guarda quando começou a mensagem de fim do turno.
         'vencedor': '',  # Guarda o nome de quem alcançar a chegada.
+        'ultima_atividade': '',  # Guarda o último desafio da partida, compartilhado entre os jogadores.
         'atividade': {}  # Aguarda os dados do desafio atual.
     }
     return dados  # Entrega a partida pronta para começar.
@@ -174,8 +175,10 @@ def resolve_parada(partida, agora):  # Analisa a casa de parada e devolve o pró
             partida['mensagem_aviso'] = texto_efeito(partida['casas_especiais'][posicao])  # Prepara o aviso.
             return 'aviso'  # Abre a caixa sem revelar ou aplicar o efeito ainda.
     if partida['origem_movimento'] == 'dado':  # Abre um desafio somente em uma parada comum do dado.
-        prepara_atividade(partida, agora)  # Prepara o tipo de desafio associado à casa e seu cronômetro.
-        return 'atividade'  # Troca o tabuleiro pela tela do desafio.
+        prepara_atividade(partida, agora)  # Sorteia um desafio diferente do anterior e inicia seu cronômetro.
+        if partida['atividade']['aguarda_inicio']:  # Esconde o enunciado enquanto o jogador lê o prazo.
+            return 'aviso_atividade'  # Aguarda Começar ou Enter sem consumir tempo.
+        return 'atividade'  # Abre diretamente os desafios sem aviso.
     prepara_resultado(partida, 'Parou na casa ' + str(posicao + 1) + '.', agora)  # Mostra onde o movimento terminou.
     return 'resultado'  # Encerra um movimento especial ou uma penalidade sem abrir outro desafio.
 
@@ -203,54 +206,56 @@ def troca_turno(partida):  # Recebe a partida e escolhe quem lançará o próxim
 
 
 # ----- Define funções da atividade de pontos
-def cria_pontos():  # Devolve oito pontos, formando quatro pares de cores iguais.
-    cores_pontos = [(210, 55, 75), (40, 110, 210), (35, 155, 95), (235, 175, 25)]  # Define quatro cores distintas.
-    pontos = []  # Prepara a lista de pontos do desafio.
-    for coluna in range(2):  # Cria uma coluna de pontos em cada lado da área do desafio.
-        cores_coluna = cores_pontos[:]  # Copia a lista para embaralhar sem alterar as cores originais.
-        random.shuffle(cores_coluna)  # Sorteia a ordem das quatro cores nesta coluna.
-        for linha in range(4):  # Distribui os quatro pontos de cada coluna.
-            ponto = {  # Reúne os dados de um ponto.
-                'centro': (largura_janela // 2 - 220 + coluna * 440, 220 + linha * 90),  # Centraliza as duas colunas sem sobrepor pontos.
-                'cor': cores_coluna[linha],  # Define a cor que identifica o par.
-                'ligado': False  # Registra que o ponto ainda não foi conectado.
-            }
-            pontos.append(ponto)  # Acrescenta o ponto à lista.
-    return pontos  # Entrega os oito pontos prontos para desenhar.
+def cria_pontos(quantidade_pares):  # Cria mais pares conforme a dificuldade da casa.
+    cores_pontos = [(210, 55, 75), (40, 110, 210), (35, 155, 95), (235, 175, 25), (150, 65, 195), (235, 110, 30)]  # Oferece seis cores.
+    pontos = []  # Guarda os pontos das duas colunas.
+    for coluna in range(2):  # Cria um ponto de cada cor em cada lado.
+        cores_coluna = cores_pontos[:quantidade_pares]  # Seleciona as cores da dificuldade atual.
+        random.shuffle(cores_coluna)  # Varia a ordem em cada coluna.
+        for linha in range(quantidade_pares):  # Distribui todos os pares na mesma área.
+            pontos.append({
+                'centro': (largura_janela // 2 - 220 + coluna * 440, 205 + linha * 300 // (quantidade_pares - 1)),  # Mantém os círculos dentro do quadro.
+                'cor': cores_coluna[linha],  # Identifica o par.
+                'ligado': False  # Começa sem conexão.
+            })
+    return pontos  # Entrega quatro, cinco ou seis pares.
 
 
 # ----- Define funções da atividade de blocos
-def cria_pilhas():  # Devolve quatro pilhas embaralhadas com uma solução garantida.
-    cores = [(210, 55, 75), (40, 110, 210), (235, 175, 25)]  # Define as três cores dos blocos.
-    random.shuffle(cores)  # Sorteia a ordem inicial das cores.
-    pilhas = [[cores[0], cores[0]], [cores[1], cores[1]], [cores[2], cores[2]], []]  # Começa com três pilhas prontas e uma vazia.
-    movimentos = [(0, 3), (1, 0), (2, 1), (3, 2)]  # Define quatro movimentos válidos que misturam as cores.
-    for movimento in movimentos:  # Executa o embaralhamento a partir da configuração resolvida.
-        origem = movimento[0]  # Identifica a pilha de onde sairá o bloco.
-        destino = movimento[1]  # Identifica a pilha que receberá o bloco.
-        bloco = pilhas[origem].pop()  # Retira apenas o último bloco da lista, que representa o topo.
-        pilhas[destino].append(bloco)  # Coloca o bloco no topo da pilha de destino.
-    random.shuffle(pilhas)  # Sorteia a posição visual das pilhas, incluindo a vazia.
-    return pilhas  # Entrega três pilhas misturadas e uma vazia, sem começar com o desafio resolvido.
+def cria_pilhas(quantidade_cores):  # Cria pilhas misturadas a partir de uma solução conhecida.
+    cores = [(210, 55, 75), (40, 110, 210), (235, 175, 25), (35, 155, 95), (150, 65, 195)]  # Oferece até cinco cores.
+    cores = cores[:quantidade_cores]  # Define três, quatro ou cinco pares de blocos.
+    random.shuffle(cores)  # Varia a ordem inicial das cores.
+    pilhas = []  # Prepara as pilhas organizadas.
+    for cor in cores:  # Coloca dois blocos iguais em cada pilha.
+        pilhas.append([cor, cor])  # Mantém a capacidade original de dois blocos.
+    pilhas.append([])  # Reserva uma pilha vazia para os movimentos.
+    pilhas[-1].append(pilhas[0].pop())  # Guarda temporariamente o topo da primeira pilha.
+    for indice in range(quantidade_cores - 1):  # Transfere o topo da próxima pilha para a anterior.
+        pilhas[indice].append(pilhas[indice + 1].pop())  # Mistura cada par com uma cor diferente.
+    pilhas[quantidade_cores - 1].append(pilhas[-1].pop())  # Fecha o ciclo e deixa a última pilha vazia.
+    random.shuffle(pilhas)  # Muda a posição visual das pilhas.
+    return pilhas  # Todos os movimentos podem ser desfeitos, garantindo solução.
 
 
-def cria_areas_pilhas():  # Devolve as quatro áreas clicáveis usadas para desenhar as pilhas.
-    areas = []  # Prepara a lista de retângulos das pilhas.
-    for indice in range(4):  # Cria uma área para cada pilha.
-        esquerda = largura_janela // 2 - 310 + indice * 160  # Distribui as quatro áreas ao redor do centro da janela.
-        areas.append(pygame.Rect(esquerda, 220, 140, 285))  # Define a posição e o tamanho de uma área.
-    return areas  # Entrega os retângulos para o desenho e a detecção de cliques.
+def cria_areas_pilhas(quantidade):  # Ajusta o tamanho das áreas à quantidade de pilhas.
+    areas = []  # Guarda os retângulos usados para desenho e cliques.
+    passo = 640 // quantidade  # Divide a largura disponível igualmente.
+    for indice in range(quantidade):  # Distribui quatro, cinco ou seis pilhas.
+        esquerda = largura_janela // 2 - 320 + indice * passo + 10  # Deixa espaço entre as pilhas.
+        areas.append(pygame.Rect(esquerda, 220, passo - 20, 285))  # Mantém as alturas originais.
+    return areas  # Entrega as áreas deste desafio.
 
 
-def encontra_pilha(posicao_mouse):  # Recebe um clique e devolve a pilha atingida ou -1.
-    for indice in range(len(areas_pilhas)):  # Examina as quatro áreas clicáveis.
-        if areas_pilhas[indice].collidepoint(posicao_mouse):  # Verifica se o clique está dentro desta pilha.
-            return indice  # Informa o índice da pilha atingida.
-    return -1  # Indica que o clique aconteceu fora das pilhas.
+def encontra_pilha(atividade, posicao_mouse):  # Procura o clique nas áreas do desafio atual.
+    for indice in range(len(atividade['areas_pilhas'])):  # Considera a quantidade variável de pilhas.
+        if atividade['areas_pilhas'][indice].collidepoint(posicao_mouse):  # Confere a área clicada.
+            return indice  # Devolve a pilha encontrada.
+    return -1  # Ignora cliques fora das pilhas.
 
 
 def trata_clique_pilhas(atividade, posicao_mouse):  # Recebe o desafio e seleciona uma origem ou move seu bloco do topo.
-    indice = encontra_pilha(posicao_mouse)  # Descobre a pilha clicada.
+    indice = encontra_pilha(atividade, posicao_mouse)  # Descobre a pilha clicada.
     if indice == -1:  # Verifica se o clique foi fora das áreas do desafio.
         return  # Ignora o clique sem alterar a seleção.
     pilhas = atividade['pilhas']  # Consulta as listas que representam as pilhas.
@@ -283,7 +288,7 @@ def conta_pilhas_prontas(pilhas):  # Recebe as pilhas e conta quantas estão com
 
 
 def verifica_pilhas(atividade):  # Recebe o desafio e verifica sua condição de vitória.
-    return conta_pilhas_prontas(atividade['pilhas']) == 3  # Exige três pares organizados; como há seis blocos, a quarta pilha fica vazia.
+    return conta_pilhas_prontas(atividade['pilhas']) == atividade['quantidade_cores']  # Exige todos os pares organizados e deixa uma pilha vazia.
 
 
 
@@ -315,8 +320,8 @@ def confere_resposta_ditado(atividade):  # Recebe o desafio e confere o conteúd
     return False  # Informa que nenhuma alternativa corresponde à resposta.
 
 
-def trata_texto_ditado(partida, acoes_texto, agora):  # Recebe as ações de teclado na ordem em que aconteceram.
-    atividade = partida['atividade']  # Consulta o ditado em andamento.
+def trata_resposta_digitada(partida, acoes_texto, agora):  # Recebe as ações de teclado na ordem em que aconteceram.
+    atividade = partida['atividade']  # Consulta o desafio digitado em andamento.
     for acao in acoes_texto:  # Percorre inserções, apagamentos e confirmações na ordem recebida.
         if atividade['resultado'] == '':  # Ignora as ações restantes se o ditado já foi resolvido.
             comando = acao[0]  # Identifica se a ação digita, apaga ou confirma.
@@ -324,41 +329,110 @@ def trata_texto_ditado(partida, acoes_texto, agora):  # Recebe as ações de tec
             if comando == 'digitar':  # Trata os caracteres recebidos pelo evento TEXTINPUT.
                 for caractere in conteudo:  # Permite receber mais de uma letra em um único evento.
                     if len(atividade['texto_digitado']) < limite_caracteres:  # Evita ultrapassar o espaço do campo.
-                        if caractere.isalpha() or caractere == ' ':  # Aceita letras, inclusive acentuadas, e espaços.
+                        if (atividade['tipo'] == 'calculo' and caractere in '0123456789') or (atividade['tipo'] != 'calculo' and (caractere.isalpha() or caractere == ' ')):  # Aceita números nas contas e letras nos ditados.
                             atividade['texto_digitado'] += caractere  # Acrescenta a letra preservando sua grafia original.
-                atividade['mensagem'] = 'Pressione Enter para confirmar sua palavra.'  # Orienta a confirmação.
+                atividade['mensagem'] = 'Pressione Enter para confirmar sua resposta.'  # Orienta a confirmação.
             elif comando == 'apagar':  # Trata o pressionamento de Backspace.
                 atividade['texto_digitado'] = atividade['texto_digitado'][:-1]  # Apaga o último caractere, mesmo se o campo já estiver vazio.
-                atividade['mensagem'] = 'Edite a palavra e pressione Enter.'  # Orienta uma nova tentativa.
+                atividade['mensagem'] = 'Edite a resposta e pressione Enter.'  # Orienta uma nova tentativa.
             elif comando == 'confirmar':  # Trata o pressionamento de Enter.
                 if normaliza_texto(atividade['texto_digitado']) == '':  # Verifica se a resposta contém apenas espaços ou está vazia.
-                    atividade['mensagem'] = 'Digite uma palavra antes de confirmar.'  # Solicita uma resposta sem encerrar o desafio.
-                elif confere_resposta_ditado(atividade):  # Verifica se a palavra completa corretamente a frase.
-                    conclui_atividade(partida, 'sucesso', 'Muito bem! Você completou o ditado.', agora)  # Registra o sucesso uma única vez.
+                    atividade['mensagem'] = 'Digite uma resposta antes de confirmar.'  # Solicita uma resposta sem encerrar o desafio.
+                elif confere_resposta(atividade):  # Verifica se a palavra completa corretamente a frase.
+                    conclui_atividade(partida, 'sucesso', 'Muito bem! Resposta correta.', agora)  # Registra o sucesso uma única vez.
                 else:  # Trata uma palavra incorreta.
-                    atividade['mensagem'] = 'Ainda não! Use Backspace e tente outra palavra.'  # Permite novas tentativas dentro do mesmo prazo.
+                    atividade['mensagem'] = 'Ainda não! Use Backspace e tente novamente.'  # Permite novas tentativas dentro do mesmo prazo.
+
+
+# ----- Define a dificuldade e os cálculos matemáticos
+def dificuldade_da_casa(posicao):  # Recebe o índice da casa ocupada pelo jogador da vez.
+    numero_casa = posicao + 1  # Converte o índice para o número visível no tabuleiro.
+    nivel = 1  # Usa a primeira faixa até a casa 7.
+    if numero_casa >= 14:  # A última faixa antecede a chegada.
+        nivel = 3  # Aplica a maior dificuldade nas casas 14 a 19.
+    elif numero_casa >= 8:  # Identifica a região intermediária.
+        nivel = 2  # Aplica dificuldade média nas casas 8 a 13.
+    return nivel  # Cada jogador usa a própria posição; recuar pode reduzir a dificuldade.
+
+
+def prazo_atividade(tipo, nivel):  # Centraliza os prazos, incluindo a regra do futuro enigma.
+    if tipo in ['ditado', 'enigma']:  # Reduz o tempo dos desafios de palavras conforme o avanço.
+        return [20000, 10000, 5000][nivel - 1]  # Usa vinte, dez e cinco segundos.
+    if tipo == 'calculo':  # Mantém o prazo das contas em todas as faixas.
+        return 20000  # Permite vinte segundos para digitar o resultado.
+    return 10000  # Mantém dez segundos para pontos e blocos.
+
+
+def cria_calculo(nivel):  # Gera uma conta e calcula a resposta sem executar texto como código.
+    minimo, maximo = [(1, 9), (10, 30), (30, 99)][nivel - 1]  # Aumenta os números a cada faixa.
+    primeiro = random.randint(minimo, maximo)  # Sorteia o primeiro número.
+    segundo = random.randint(minimo, maximo)  # Sorteia o segundo número, sempre diferente de zero.
+    operacao = random.choice(['+', '-', 'x', '÷'])  # Alterna entre as quatro operações.
+    if operacao == '+':  # Resolve uma soma.
+        resposta = primeiro + segundo  # Calcula o total.
+    elif operacao == '-':  # Evita resultados negativos nesta etapa.
+        primeiro, segundo = max(primeiro, segundo), min(primeiro, segundo)  # Coloca o maior primeiro.
+        resposta = primeiro - segundo  # Calcula a diferença.
+    elif operacao == 'x':  # Resolve uma multiplicação.
+        resposta = primeiro * segundo  # Calcula o produto.
+    else:  # Constrói uma divisão exata, sem exigir resposta decimal.
+        resposta = primeiro  # Usa o primeiro sorteio como quociente.
+        primeiro = resposta * segundo  # Calcula um dividendo múltiplo do divisor.
+    return {'enunciado': str(primeiro) + ' ' + operacao + ' ' + str(segundo) + ' = ?', 'resposta': resposta}  # Entrega a conta e o resultado.
+
+
+def confere_resposta(atividade):  # Escolhe a comparação apropriada ao desafio digitado.
+    if atividade['tipo'] == 'calculo':  # Confere a resposta numérica.
+        texto = atividade['texto_digitado']  # Consulta exatamente o conteúdo do campo.
+        if texto == '' or not texto.isdecimal():  # Rejeita vazio ou texto que não represente um inteiro.
+            return False  # Mantém a tentativa aberta.
+        return int(texto) == atividade['resposta']  # Aceita também zeros à esquerda.
+    return confere_resposta_ditado(atividade)  # Preserva a comparação que ignora acentos e maiúsculas.
+
+
+def inicia_atividade(partida, agora):  # Inicia o cronômetro somente quando o desafio pode ser jogado.
+    atividade = partida['atividade']  # Consulta o desafio preparado.
+    atividade['aguarda_inicio'] = False  # Fecha o aviso anterior ao ditado.
+    atividade['inicio'] = agora  # Zera a contagem sem incluir o tempo de leitura do aviso.
+    if atividade['tipo'] in ['ditado', 'calculo', 'enigma']:  # Ativa o teclado apenas para respostas digitadas.
+        pygame.key.set_text_input_rect(campo_resposta)  # Informa onde fica o campo.
+        pygame.key.start_text_input()  # Começa a receber texto.
+    return 'atividade'  # Libera os controles do desafio.
 
 
 # ----- Define funções comuns às atividades
-def prepara_atividade(partida, agora):  # Recebe a partida e prepara o desafio associado à casa atual.
-    jogador = partida['jogadores'][partida['jogador_atual']]  # Consulta o participante que parou na casa.
-    tipo = tipos_atividades[jogador['posicao']]  # Descobre qual das três atividades está associada à casa.
+def escolhe_atividade(partida):  # Sorteia uma atividade sem repetir a última apresentada na partida.
+    opcoes = []  # Reúne apenas os desafios diferentes do anterior.
+    for tipo in atividades_disponiveis:  # Percorre os jogos implementados; a mesma regra servirá para os cinco.
+        if tipo != partida['ultima_atividade']:  # Exclui o último jogo, mesmo após falha ou troca de jogador.
+            opcoes.append(tipo)  # Permite sortear este desafio.
+    return random.choice(opcoes)  # Sorteia entre as opções restantes com chances iguais.
+
+
+def prepara_atividade(partida, agora):  # Recebe a partida e prepara o próximo desafio sem repetição consecutiva.
+    tipo = escolhe_atividade(partida)  # Escolhe pelo histórico da partida, independentemente da casa.
     pygame.key.stop_text_input()  # Desativa qualquer entrada de texto de um desafio anterior.
-    atividade = {  # Prepara os dados compartilhados pelas três atividades.
+    jogador = partida['jogadores'][partida['jogador_atual']]  # Consulta a posição de quem vai jogar.
+    nivel = dificuldade_da_casa(jogador['posicao'])  # Calcula a faixa desta casa.
+    atividade = {  # Prepara os dados compartilhados pelas quatro atividades.
         'tipo': tipo,  # Guarda o desafio que receberá cliques e será desenhado.
+        'nivel': nivel,  # Guarda a dificuldade até o fim do desafio.
+        'aguarda_inicio': tipo in ['ditado', 'enigma'],  # Exige aviso antes dos desafios de palavras.
         'selecionado': -1,  # Indica que ainda não existe ponto ou pilha selecionado.
         'inicio': agora,  # Guarda o instante inicial em milissegundos.
-        'limite': 10000,  # Define dez segundos como prazo da atividade de pontos.
+        'limite': prazo_atividade(tipo, nivel),  # Define o prazo conforme o jogo e a faixa.
         'mensagem': '',  # Aguarda a instrução específica do desafio.
         'resultado': '',  # Mantém o resultado indefinido enquanto o desafio está ativo.
-        'tempo_final': 10  # Prepara o valor do cronômetro para a atividade de pontos.
+        'tempo_final': prazo_atividade(tipo, nivel) // 1000  # Prepara o cronômetro desta faixa.
     }
     if tipo == 'pontos':  # Prepara a atividade de conectar cores iguais.
-        atividade['pontos'] = cria_pontos()  # Sorteia a organização dos quatro pares.
+        atividade['pontos'] = cria_pontos(nivel + 3)  # Prepara quatro, cinco ou seis pares.
         atividade['ligacoes'] = []  # Começa sem linhas concluídas.
         atividade['mensagem'] = 'Clique em um ponto e depois no outro da mesma cor.'  # Explica o primeiro passo.
     elif tipo == 'blocos':  # Prepara a atividade de organizar pilhas.
-        atividade['pilhas'] = cria_pilhas()  # Cria uma configuração misturada que pode ser resolvida.
+        atividade['quantidade_cores'] = nivel + 2  # Usa seis, oito ou dez blocos.
+        atividade['pilhas'] = cria_pilhas(atividade['quantidade_cores'])  # Garante uma configuração solucionável.
+        atividade['areas_pilhas'] = cria_areas_pilhas(len(atividade['pilhas']))  # Ajusta desenho e cliques juntos.
         atividade['limite'] = 10000  # Define dez segundos para organizar os blocos.
         atividade['tempo_final'] = 10  # Prepara o valor inicial do cronômetro de blocos.
         atividade['mensagem'] = 'Escolha uma pilha para retirar o bloco do topo.'  # Explica o primeiro passo.
@@ -367,15 +441,22 @@ def prepara_atividade(partida, agora):  # Recebe a partida e prepara o desafio a
         atividade['enunciado'] = ditado['enunciado']  # Guarda a frase com uma lacuna.
         atividade['respostas'] = ditado['respostas']  # Guarda as palavras aceitas para essa lacuna.
         atividade['texto_digitado'] = ''  # Começa com o campo de resposta vazio.
-        atividade['limite'] = 20000  # Define vinte segundos para responder ao ditado.
-        atividade['tempo_final'] = 20  # Prepara o cronômetro inicial de ditados.
         atividade['mensagem'] = 'Digite a palavra que falta e pressione Enter.'  # Explica como responder.
-        pygame.key.set_text_input_rect(campo_resposta)  # Indica ao sistema a posição do campo de digitação.
-        pygame.key.start_text_input()  # Ativa eventos de texto, incluindo letras acentuadas.
+    elif tipo == 'calculo':  # Prepara a quarta atividade.
+        conta = cria_calculo(nivel)  # Sorteia uma operação com números da faixa atual.
+        atividade['enunciado'] = conta['enunciado']  # Guarda a conta exibida.
+        atividade['resposta'] = conta['resposta']  # Guarda o resultado esperado.
+        atividade['texto_digitado'] = ''  # Começa com o campo vazio.
+        atividade['mensagem'] = 'Digite o resultado e pressione Enter.'  # Explica a resposta.
     partida['atividade'] = atividade  # Substitui integralmente os dados do desafio anterior.
+    partida['ultima_atividade'] = tipo  # Impede repetir a atividade mesmo após falha ou troca de jogador.
+    if not atividade['aguarda_inicio']:  # Jogos sem aviso começam imediatamente.
+        inicia_atividade(partida, agora)  # Ativa os controles e o cronômetro.
 
 
 def calcula_tempo_restante(atividade, agora):  # Recebe o desafio e o tempo atual; devolve os segundos restantes.
+    if atividade['aguarda_inicio']:  # Não desconta o tempo de leitura do aviso.
+        return atividade['limite'] // 1000  # Mantém o prazo completo até a confirmação.
     milissegundos = atividade['limite'] - (agora - atividade['inicio'])  # Desconta o tempo já utilizado.
     if milissegundos < 0:  # Verifica se o limite já foi ultrapassado.
         milissegundos = 0  # Evita exibir valores negativos no cronômetro.
@@ -417,7 +498,7 @@ def trata_clique_pontos(atividade, posicao_mouse):  # Recebe o desafio e trata u
 
 
 def verifica_pontos(atividade):  # Recebe o desafio e verifica se todos os pares foram conectados.
-    return len(atividade['ligacoes']) == len(atividade['pontos']) // 2  # Exige quatro pares completos.
+    return len(atividade['ligacoes']) == len(atividade['pontos']) // 2  # Exige todos os pares completos.
 
 
 def conclui_atividade(partida, resultado, mensagem, agora):  # Recebe a partida, o resultado, sua mensagem e o tempo atual.
@@ -432,6 +513,8 @@ def conclui_atividade(partida, resultado, mensagem, agora):  # Recebe a partida,
 
 def atualiza_atividade(partida, cliques, acoes_texto, desistir, agora):  # Recebe os pedidos do frame e devolve o próximo estado.
     atividade = partida['atividade']  # Consulta o desafio em andamento.
+    if atividade['aguarda_inicio']:  # Bloqueia respostas e penalidades antes da confirmação.
+        return 'aviso_atividade'  # Mantém o aviso aberto sem consumir o prazo.
     if agora - atividade['inicio'] >= atividade['limite']:  # Confere o prazo antes de aceitar qualquer resposta.
         conclui_atividade(partida, 'falha', 'Tempo esgotado! Você voltará uma casa.', agora)  # Registra a falha por tempo.
         return 'resultado_atividade'  # Mostra a falha antes de aplicar a penalidade.
@@ -446,10 +529,10 @@ def atualiza_atividade(partida, cliques, acoes_texto, desistir, agora):  # Receb
                     conclui_atividade(partida, 'sucesso', 'Muito bem! Você conectou todos os pares.', agora)  # Registra o sucesso nos pontos.
             elif atividade['tipo'] == 'blocos':  # Encaminha o clique para a atividade de blocos.
                 trata_clique_pilhas(atividade, posicao_mouse)  # Tenta selecionar uma pilha ou mover seu topo.
-                if verifica_pilhas(atividade):  # Verifica se as três cores foram organizadas.
+                if verifica_pilhas(atividade):  # Verifica se todas as cores foram organizadas.
                     conclui_atividade(partida, 'sucesso', 'Muito bem! Você organizou todas as cores.', agora)  # Registra o sucesso nos blocos.
-    if atividade['tipo'] == 'ditado':  # Encaminha os eventos de teclado para o desafio de texto.
-        trata_texto_ditado(partida, acoes_texto, agora)  # Processa digitação, Backspace e Enter depois de conferir o prazo.
+    if atividade['tipo'] in ['ditado', 'calculo']:  # Encaminha o teclado para os desafios digitados.
+        trata_resposta_digitada(partida, acoes_texto, agora)  # Processa digitação, Backspace e Enter depois de conferir o prazo.
     if atividade['resultado'] == 'sucesso':  # Verifica se o desafio acabou por cliques ou digitação.
         return 'resultado_atividade'  # Mantém o desafio resolvido visível por um breve intervalo.
     return 'atividade'  # Continua recebendo cliques até o sucesso ou o fim do prazo.
@@ -477,7 +560,7 @@ def desenha_menu():  # Mostra as opções de quantidade de jogadores.
     pygame.draw.rect(janela, cor_texto, botao_dois_jogadores, 2)  # Contorna o segundo botão.
     desenha_texto_centralizado('1 jogador', fonte_normal, cor_texto, botao_um_jogador.centerx, 303)  # Centraliza o nome no primeiro botão.
     desenha_texto_centralizado('2 jogadores', fonte_normal, cor_texto, botao_dois_jogadores.centerx, 393)  # Centraliza o nome no segundo botão.
-    desenha_texto_centralizado('Etapa 4C: pontos, blocos e ditados.', fonte_pequena, cor_texto, largura_janela // 2, 490)  # Explica esta versão.
+    desenha_texto_centralizado('Etapa 4D: pontos, blocos, ditados e cálculos.', fonte_pequena, cor_texto, largura_janela // 2, 490)  # Explica esta versão.
 
 
 def desenha_tabuleiro(partida):  # Recebe a partida e desenha as casas com os efeitos já revelados.
@@ -619,10 +702,11 @@ def desenha_face_dado(valor, face, seno, cosseno):  # Desenha uma das faces vis�
     pygame.draw.polygon(janela, (luminosidade, luminosidade, luminosidade), vertices_tela)  # Preenche a face com iluminação simples.
     pygame.draw.polygon(janela, cor_texto, vertices_tela, 3)  # Mantém os três pixels do contorno original do dado.
     distancia_bolinhas = 35 / (retangulo_dado.width / 2)  # Preserva os trinta e cinco pixels de distância entre as bolinhas da grade original.
-    pontos_faces = {  # Define somente as três faces permitidas pelo jogo.
+    pontos_faces = {  # Define as quatro faces permitidas pelo jogo.
         1: [(0, 0)],  # Coloca uma bolinha no centro.
         2: [(-distancia_bolinhas, -distancia_bolinhas), (distancia_bolinhas, distancia_bolinhas)],  # Coloca duas bolinhas em diagonal.
-        3: [(-distancia_bolinhas, -distancia_bolinhas), (0, 0), (distancia_bolinhas, distancia_bolinhas)]  # Acrescenta o centro à diagonal.
+        3: [(-distancia_bolinhas, -distancia_bolinhas), (0, 0), (distancia_bolinhas, distancia_bolinhas)],  # Acrescenta o centro à diagonal.
+        4: [(-distancia_bolinhas, -distancia_bolinhas), (distancia_bolinhas, -distancia_bolinhas), (-distancia_bolinhas, distancia_bolinhas), (distancia_bolinhas, distancia_bolinhas)]  # Coloca uma bolinha em cada canto.
     }
     for ponto in pontos_faces[valor]:  # Desenha as bolinhas do valor desta face.
         if face == 'superior':  # Posiciona as bolinhas sobre o plano superior do cubo.
@@ -690,24 +774,24 @@ def desenha_pontos(atividade):  # Recebe o desafio de pontos para desenhar suas 
         primeiro = atividade['pontos'][ligacao[0]]  # Consulta o ponto inicial da linha.
         segundo = atividade['pontos'][ligacao[1]]  # Consulta o ponto final da linha.
         pygame.draw.line(janela, primeiro['cor'], primeiro['centro'], segundo['centro'], 7)  # Desenha a conexão abaixo dos pontos.
-    for indice in range(len(atividade['pontos'])):  # Percorre os oito pontos do desafio.
+    for indice in range(len(atividade['pontos'])):  # Percorre todos os pontos do desafio.
         ponto = atividade['pontos'][indice]  # Consulta a aparência e a posição do ponto.
         centro = ponto['centro']  # Guarda o centro para os desenhos seguintes.
         pygame.draw.circle(janela, cor_branca, centro, raio_ponto + 5)  # Separa o ponto das linhas que passam por ele.
         pygame.draw.circle(janela, ponto['cor'], centro, raio_ponto)  # Desenha o ponto colorido.
         pygame.draw.circle(janela, cor_texto, centro, raio_ponto, 2)  # Desenha o contorno do ponto.
         if indice == atividade['selecionado']:  # Verifica se esse é o primeiro ponto selecionado.
-            pygame.draw.circle(janela, cor_texto, centro, raio_ponto + 9, 3)  # Destaca a seleção com um anel.
+            pygame.draw.circle(janela, cor_texto, centro, raio_ponto + 5, 3)  # Destaca a seleção com um anel.
         if ponto['ligado']:  # Verifica se a conexão desse ponto está concluída.
             pygame.draw.line(janela, cor_branca, (centro[0] - 8, centro[1]), (centro[0] - 2, centro[1] + 6), 3)  # Desenha o começo do sinal de confirmação.
             pygame.draw.line(janela, cor_branca, (centro[0] - 2, centro[1] + 6), (centro[0] + 9, centro[1] - 7), 3)  # Completa o sinal de confirmação.
-    desenha_texto_centralizado('Pares conectados: ' + str(len(atividade['ligacoes'])) + '/4', fonte_normal, cor_texto, largura_janela // 2, 552)  # Mostra o progresso.
+    desenha_texto_centralizado('Pares conectados: ' + str(len(atividade['ligacoes'])) + '/' + str(len(atividade['pontos']) // 2), fonte_normal, cor_texto, largura_janela // 2, 552)  # Mostra o progresso.
 
 
-def desenha_pilhas(atividade):  # Recebe o desafio de blocos para desenhar as quatro pilhas.
+def desenha_pilhas(atividade):  # Recebe o desafio de blocos para desenhar todas as pilhas.
     for indice in range(len(atividade['pilhas'])):  # Percorre as pilhas na ordem em que aparecem na tela.
         pilha = atividade['pilhas'][indice]  # Consulta os blocos desta pilha, da base para o topo.
-        area = areas_pilhas[indice]  # Consulta o retângulo usado também para detectar cliques.
+        area = atividade['areas_pilhas'][indice]  # Consulta o retângulo usado também para detectar cliques.
         cor_borda = cor_sombra  # Define a borda normal de uma pilha.
         if indice == atividade['selecionado']:  # Verifica se a pilha foi escolhida como origem.
             cor_borda = cor_texto  # Destaca a seleção com uma borda escura.
@@ -723,7 +807,7 @@ def desenha_pilhas(atividade):  # Recebe o desafio de blocos para desenhar as qu
                 pygame.draw.rect(janela, cor_texto, espaco, 2)  # Contorna o bloco para separar as peças.
         desenha_texto_centralizado(str(len(pilha)) + '/2', fonte_pequena, cor_texto, area.centerx, 510)  # Mostra a ocupação da pilha.
     prontas = conta_pilhas_prontas(atividade['pilhas'])  # Conta as pilhas completas e de uma cor.
-    desenha_texto_centralizado('Pilhas prontas: ' + str(prontas) + '/3', fonte_normal, cor_texto, largura_janela // 2, 552)  # Mostra o progresso.
+    desenha_texto_centralizado('Pilhas prontas: ' + str(prontas) + '/' + str(atividade['quantidade_cores']), fonte_normal, cor_texto, largura_janela // 2, 552)  # Mostra o progresso.
 
 
 
@@ -744,10 +828,13 @@ def quebra_texto(texto, fonte, largura_maxima):  # Divide uma frase em linhas qu
     return linhas  # Entrega as linhas para serem desenhadas.
 
 
-def desenha_ditado(atividade, agora):  # Recebe o ditado e o tempo para desenhar a frase, o campo e o cursor.
+def desenha_resposta_digitada(atividade, agora):  # Recebe o desafio e o tempo para desenhar a pergunta, o campo e o cursor.
     frase = atividade['enunciado']  # Consulta a frase com a palavra faltando.
-    if atividade['resultado'] == 'sucesso':  # Verifica se a resposta foi aceita.
-        frase = frase.replace('______', atividade['respostas'][0])  # Mostra o ditado completo depois do acerto.
+    if atividade['resultado'] == 'sucesso':  # Revela a resposta correta após o acerto.
+        if atividade['tipo'] == 'calculo':  # Completa a igualdade matemática.
+            frase = frase.replace('?', str(atividade['resposta']))
+        else:  # Completa a palavra do ditado.
+            frase = frase.replace('______', atividade['respostas'][0])  # Mostra o ditado completo depois do acerto.
     linhas = quebra_texto(frase, fonte_normal, 620)  # Divide frases longas para evitar que ultrapassem o quadro.
     for indice in range(len(linhas)):  # Percorre as linhas do ditado.
         desenha_texto_centralizado(linhas[indice], fonte_normal, cor_texto, largura_janela // 2, 220 + indice * 34)  # Centraliza cada linha.
@@ -761,7 +848,10 @@ def desenha_ditado(atividade, agora):  # Recebe o ditado e o tempo para desenhar
         pygame.draw.line(janela, cor_texto, (esquerda_cursor, campo_resposta.y + 14), (esquerda_cursor, campo_resposta.y + 43), 2)  # Desenha o cursor.
     desenha_texto_centralizado('Backspace: apagar  |  Enter: confirmar', fonte_pequena, cor_texto, largura_janela // 2, 450)  # Explica os controles.
     desenha_texto_centralizado('Você pode tentar novamente enquanto houver tempo.', fonte_pequena, cor_texto, largura_janela // 2, 485)  # Explica as tentativas.
-    desenha_texto_centralizado('Complete com uma única palavra.', fonte_normal, cor_texto, largura_janela // 2, 552)  # Reforça o objetivo do desafio.
+    objetivo = 'Complete com uma única palavra.'  # Define o objetivo dos ditados.
+    if atividade['tipo'] == 'calculo':  # Explica o formato numérico.
+        objetivo = 'Responda com um número inteiro, sem sinal ou vírgula.'  # As contas têm resultados não negativos.
+    desenha_texto_centralizado(objetivo, fonte_normal, cor_texto, largura_janela // 2, 552)  # Reforça o objetivo do desafio.
 
 
 def desenha_atividade(partida, agora):  # Recebe a partida e o tempo atual para desenhar o desafio.
@@ -776,16 +866,21 @@ def desenha_atividade(partida, agora):  # Recebe a partida e o tempo atual para 
     desenha_texto(jogador['nome'], fonte_normal, jogador['cor'], 35, 35)  # Mostra o participante da vez.
     titulo = 'CONECTE AS CORES'  # Prepara o título da atividade de pontos.
     instrucao = 'Clique em dois pontos da mesma cor para conectá-los.'  # Explica os cliques nos pontos.
-    regra = 'Complete os quatro pares. As linhas podem se cruzar.'  # Explica a vitória nos pontos.
+    regra = 'Complete todos os pares. As linhas podem se cruzar.'  # Explica a vitória nos pontos.
     if atividade['tipo'] == 'blocos':  # Ajusta as instruções para a atividade de blocos.
         titulo = 'ORGANIZE OS BLOCOS'  # Prepara o título do novo desafio.
         instrucao = 'Clique na pilha de origem e depois na pilha de destino.'  # Explica os dois cliques.
         regra = 'Mova só o topo. Até 2 blocos por pilha; misturar cores é permitido.'  # Explica os movimentos válidos.
-        desenha_texto_centralizado('Objetivo: três pilhas completas, cada uma de uma cor, e uma vazia.', fonte_pequena, cor_texto, largura_janela // 2, 147)  # Explica a condição de vitória.
+        desenha_texto_centralizado('Objetivo: ' + str(atividade['quantidade_cores']) + ' pilhas de uma única cor e uma vazia.', fonte_pequena, cor_texto, largura_janela // 2, 147)  # Explica a condição de vitória.
     elif atividade['tipo'] == 'ditado':  # Ajusta o cabeçalho para o desafio de texto.
         titulo = 'COMPLETE O DITADO'  # Define o título do novo desafio.
         instrucao = 'Digite a palavra que falta e pressione Enter.'  # Explica a confirmação.
         regra = 'Maiúsculas e acentos não alteram a resposta.'  # Explica as variações aceitas.
+    elif atividade['tipo'] == 'calculo':  # Ajusta o cabeçalho das contas.
+        titulo = 'CÁLCULO MATEMÁTICO'  # Identifica a quarta atividade.
+        instrucao = 'Resolva a conta, digite o resultado e pressione Enter.'  # Explica o controle.
+        regra = 'Divisões exatas e resultados inteiros não negativos.'  # Evita dúvidas sobre o formato.
+    desenha_texto('Nível ' + str(atividade['nivel']), fonte_pequena, cor_texto, 35, 65)  # Mostra a dificuldade atual.
     desenha_texto_centralizado(titulo, fonte_titulo, cor_texto, largura_janela // 2, 25)  # Apresenta o desafio atual.
     desenha_texto_centralizado('Tempo: ' + str(tempo) + ' s', fonte_normal, cor_cronometro, largura_janela - 125, 35)  # Mostra o cronômetro visível.
     desenha_texto_centralizado(instrucao, fonte_normal, cor_texto, largura_janela // 2, 90)  # Explica o controle.
@@ -795,9 +890,9 @@ def desenha_atividade(partida, agora):  # Recebe a partida e o tempo atual para 
     if atividade['tipo'] == 'pontos':  # Escolhe os desenhos do desafio de pontos.
         desenha_pontos(atividade)  # Mostra círculos, conexões e contagem de pares.
     elif atividade['tipo'] == 'blocos':  # Escolhe os desenhos do desafio de blocos.
-        desenha_pilhas(atividade)  # Mostra as quatro pilhas e sua organização.
-    elif atividade['tipo'] == 'ditado':  # Escolhe a tela de completar uma palavra.
-        desenha_ditado(atividade, agora)  # Mostra o enunciado, a resposta e o cursor.
+        desenha_pilhas(atividade)  # Mostra as pilhas e sua organização.
+    elif atividade['tipo'] in ['ditado', 'calculo']:  # Escolhe a tela com campo de resposta.
+        desenha_resposta_digitada(atividade, agora)  # Mostra o enunciado, a resposta e o cursor.
     desenha_texto_centralizado(atividade['mensagem'], fonte_pequena, cor_texto, largura_janela // 2, 595)  # Mostra instruções, erros ou o resultado.
     if atividade['resultado'] == '':  # Mantém o botão de desistência somente durante o desafio.
         pygame.draw.rect(janela, cor_painel, botao_desistir)  # Desenha o fundo do botão.
@@ -852,10 +947,9 @@ instantes_poses = [0, 0.15, 0.40, 0.65, 0.85, 1]  # Define em que fração do sa
 
 # ----- Inicia estruturas de dados
 casas = cria_casas()  # Guarda as vinte casas nas mesmas posições da Etapa 2.
-sequencia_atividades = ['pontos', 'blocos', 'ditado']  # Define a ordem dos três tipos ao longo do percurso.
-tipos_atividades = []  # Guarda a atividade associada a cada uma das vinte casas.
-for indice in range(len(casas)):  # Distribui os desafios sem alterar as posições do tabuleiro.
-    tipos_atividades.append(sequencia_atividades[indice % len(sequencia_atividades)])  # Repete pontos, blocos e ditado.
+atividades_disponiveis = ['pontos', 'blocos', 'ditado', 'calculo']  # Mantém apenas os jogos já implementados; deve conter pelo menos dois tipos diferentes.
+# O quinto jogo será o enigma: acrescente-o à lista quando suas perguntas e regras estiverem implementadas.
+# A escolha exclui a última atividade da partida, incluindo entre jogadores e após casas especiais.
 ditados = [  # Guarda doze frases com uma palavra faltando e suas respostas aceitas.
     {'enunciado': 'Quem não arrisca, não ______.', 'respostas': ['petisca']},  # Ditado sobre tentar.
     {'enunciado': 'Água mole em pedra dura, tanto bate até que ______.', 'respostas': ['fura']},  # Ditado sobre persistência.
@@ -873,7 +967,6 @@ ditados = [  # Guarda doze frases com uma palavra faltando e suas respostas acei
 campo_resposta = pygame.Rect(largura_janela // 2 - 290, 355, 580, 60)  # Define a área do texto digitado.
 limite_caracteres = 24  # Limita a resposta para manter o texto dentro do campo.
 capacidade_pilha = 2  # Limita cada pilha a dois blocos.
-areas_pilhas = cria_areas_pilhas()  # Define quatro áreas clicáveis fixas para os blocos.
 partida = {}  # Aguarda a escolha do modo para receber os dados da partida.
 retangulo_dado = pygame.Rect(810, 495, 120, 120)  # Define a área do dado.
 botao_um_jogador = pygame.Rect(largura_janela // 2 - 150, 280, 300, 65)  # Centraliza a primeira opção do menu.
@@ -924,25 +1017,25 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
                         pedido_desistir = True  # Solicita a penalidade e o encerramento do turno.
                     else:  # Guarda os outros cliques para as atividades que usam o mouse.
                         cliques_atividade.append(posicao_mouse)  # Mantém a ordem dos cliques recebidos.
-                elif estado == 'aviso' or estado == 'fim':  # Trata somente o botão da caixa aberta.
+                elif estado in ['aviso', 'fim', 'aviso_atividade']:  # Trata somente o botão da caixa aberta.
                     if botao_confirmar.collidepoint(posicao_mouse):  # Verifica se o botão foi atingido.
                         pedido_confirmacao = True  # Solicita a ação do botão: continuar ou jogar novamente.
         elif evento.type == pygame.TEXTINPUT:  # Recebe caracteres já compostos pelo teclado, incluindo acentos.
             if estado == 'atividade':  # Aceita texto somente durante um desafio ativo.
-                if partida['atividade']['tipo'] == 'ditado':  # Verifica se o desafio atual possui campo de resposta.
+                if partida['atividade']['tipo'] in ['ditado', 'calculo']:  # Verifica se o desafio atual possui campo de resposta.
                     acoes_texto.append(('digitar', evento.text))  # Guarda as letras sem duplicá-las no evento KEYDOWN.
         elif evento.type == pygame.KEYDOWN:  # Verifica o pressionamento de uma tecla.
             if evento.key == pygame.K_ESCAPE:  # Reconhece Esc em qualquer estado do jogo.
                 jogo_ativo = False  # Solicita o fechamento da janela em tela cheia.
             elif evento.key == pygame.K_RETURN:  # Reconhece a tecla Enter.
-                if estado == 'aviso' or estado == 'fim':  # Aceita Enter apenas nas caixas.
+                if estado in ['aviso', 'fim', 'aviso_atividade']:  # Aceita Enter apenas nas caixas.
                     pedido_confirmacao = True  # Faz o mesmo que clicar no botão.
                 elif estado == 'atividade':  # Verifica se Enter deve confirmar uma resposta.
-                    if partida['atividade']['tipo'] == 'ditado':  # Restringe a confirmação ao desafio de texto.
+                    if partida['atividade']['tipo'] in ['ditado', 'calculo']:  # Restringe a confirmação ao desafio de texto.
                         acoes_texto.append(('confirmar', ''))  # Registra a confirmação depois dos caracteres anteriores.
             elif evento.key == pygame.K_BACKSPACE:  # Reconhece a tecla de apagar.
                 if estado == 'atividade':  # Permite editar somente uma atividade em andamento.
-                    if partida['atividade']['tipo'] == 'ditado':  # Restringe a edição ao desafio de texto.
+                    if partida['atividade']['tipo'] in ['ditado', 'calculo']:  # Restringe a edição ao desafio de texto.
                         acoes_texto.append(('apagar', ''))  # Solicita a remoção do último caractere.
 
     # ----- Atualiza a lógica do jogo
@@ -954,7 +1047,7 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
                 estado = 'tabuleiro'  # Libera o primeiro lançamento.
         elif estado == 'tabuleiro':  # Aguarda um lançamento do participante da vez.
             if pedido_dado:  # Verifica o pedido recebido nos eventos.
-                partida['proximo_valor_dado'] = rola_dado()  # Sorteia uma única vez um resultado entre um e três.
+                partida['proximo_valor_dado'] = rola_dado()  # Sorteia uma única vez um resultado entre um e quatro.
                 partida['inicio_giro_dado'] = agora  # Registra o início da rotação.
                 partida['mensagem'] = 'Aguarde o giro...'  # Mantém o resultado pendente durante a animação.
                 estado = 'rolando_dado'  # Bloqueia novos lançamentos até terminar o giro.
@@ -970,6 +1063,9 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
         elif estado == 'aviso':  # Mantém o efeito pendente enquanto a caixa está aberta.
             if pedido_confirmacao:  # Verifica se a pessoa leu e fechou o aviso.
                 estado = aplica_casa_especial(partida, agora)  # Revela a casa e aplica seu efeito.
+        elif estado == 'aviso_atividade':  # Aguarda a confirmação sem mostrar o enunciado.
+            if pedido_confirmacao:  # Recebe o botão Começar ou Enter.
+                estado = inicia_atividade(partida, agora)  # Só agora começa a contar o prazo.
         elif estado == 'atividade':  # Atualiza cliques e prazo sem bloquear a janela.
             estado = atualiza_atividade(partida, cliques_atividade, acoes_texto, pedido_desistir, agora)  # Decide se o desafio continua ou acabou.
         elif estado == 'resultado_atividade':  # Exibe brevemente o desafio concluído ou a falha antes de voltar ao tabuleiro.
@@ -995,11 +1091,16 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
             janela.fill(cor_fundo)  # Limpa os desenhos do frame anterior.
             if estado == 'menu':  # Verifica se a escolha de participantes deve aparecer.
                 desenha_menu()  # Mostra os botões do menu.
+            elif estado == 'aviso_atividade':  # Exibe somente o aviso, sem revelar a resposta ou a pergunta.
+                tempo_aviso = partida['atividade']['limite'] // 1000  # Consulta o prazo real desta faixa.
+                mensagem_aviso = 'Você possui apenas ' + str(tempo_aviso) + ' segundos para concluir o desafio.'  # Dá destaque ao prazo.
+                desenha_caixa('PREPARE-SE PARA O DITADO', mensagem_aviso, 'Começar')  # Aguarda uma ação voluntária.
+                desenha_texto_centralizado('O tempo começa ao clicar em Começar ou pressionar Enter.', fonte_pequena, cor_texto, largura_janela // 2, 475)  # Explica quando começa a contagem.
             elif estado == 'atividade' or estado == 'resultado_atividade':  # Verifica se a atividade ou seu resultado deve aparecer.
                 desenha_atividade(partida, agora)  # Desenha a atividade atual e seu cronômetro.
             else:  # Desenha o tabuleiro nos demais estados.
                 desenha_texto('TRILHA DOS DESAFIOS', fonte_titulo, cor_texto, 35, 25)  # Mostra o título do tabuleiro.
-                desenha_texto('Dado: 1 a 3 | Pontos e blocos: 10 s | Ditados: 20 s', fonte_pequena, cor_texto, 37, 73)  # Identifica a versão.
+                desenha_texto('Dado: 1 a 4 | Dificuldade por casa | Cálculos: 20 s', fonte_pequena, cor_texto, 37, 73)  # Identifica a versão.
                 desenha_tabuleiro(partida)  # Mostra casas comuns e efeitos já revelados.
                 desenha_pecas(partida, estado, agora)  # Mostra as peças nas posições atuais.
                 desenha_painel(partida, estado, agora)  # Mostra o participante da vez e as instruções.
