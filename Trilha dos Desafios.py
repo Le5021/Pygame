@@ -646,6 +646,20 @@ def desenha_texto_centralizado(texto, fonte, cor, centro_horizontal, topo):  # R
     janela.blit(texto_desenhado, (esquerda, topo))  # Desenha o texto centralizado sem alterar sua altura.
 
 
+def desenha_decoracao_menu():  # Desenha um trecho de tabuleiro só por estética, sem nenhuma função no jogo.
+    centros_decoracao = [(160, 500), (280, 555), (400, 500), (520, 555), (640, 500), (760, 555), (880, 500)]  # Define um zigue-zague fixo, só decorativo.
+    tamanho_decoracao = 54  # Define o tamanho de cada casa decorativa, menor que as casas reais.
+    for indice in range(len(centros_decoracao) - 1):  # Percorre os pares de casas vizinhas.
+        pygame.draw.line(janela, cor_sombra, centros_decoracao[indice], centros_decoracao[indice + 1], 8)  # Liga as casas decorativas.
+    for indice in range(len(centros_decoracao)):  # Percorre cada casa decorativa.
+        centro_x, centro_y = centros_decoracao[indice]  # Consulta o centro desta casa.
+        cor_decoracao = cores_casas[indice % len(cores_casas)]  # Repete as mesmas três cores do tabuleiro real.
+        meio = tamanho_decoracao // 2  # Calcula a metade do tamanho para montar o retângulo.
+        pygame.draw.rect(janela, cor_sombra, (centro_x - meio + 4, centro_y - meio + 4, tamanho_decoracao, tamanho_decoracao))  # Desenha a sombra.
+        pygame.draw.rect(janela, cor_decoracao, (centro_x - meio, centro_y - meio, tamanho_decoracao, tamanho_decoracao))  # Preenche a casa decorativa.
+        pygame.draw.rect(janela, cor_texto, (centro_x - meio, centro_y - meio, tamanho_decoracao, tamanho_decoracao), 2)  # Contorna a casa decorativa.
+
+
 def desenha_menu():  # Mostra as opções de quantidade de jogadores.
     desenha_texto_centralizado('TRILHA DOS DESAFIOS', fonte_titulo, cor_texto, largura_janela // 2, 160)  # Centraliza o título na janela.
     desenha_texto_centralizado('Escolha quantas pessoas irão jogar:', fonte_normal, cor_texto, largura_janela // 2, 230)  # Centraliza a instrução na janela.
@@ -653,8 +667,9 @@ def desenha_menu():  # Mostra as opções de quantidade de jogadores.
     pygame.draw.rect(janela, cores_casas[2], botao_dois_jogadores)  # Desenha a segunda opção.
     pygame.draw.rect(janela, cor_texto, botao_um_jogador, 2)  # Contorna o primeiro botão.
     pygame.draw.rect(janela, cor_texto, botao_dois_jogadores, 2)  # Contorna o segundo botão.
-    desenha_texto_centralizado('1 Jogador', fonte_normal, cor_texto, botao_um_jogador.centerx, 303)  # Centraliza o nome no primeiro botão.
-    desenha_texto_centralizado('2 Jogadores', fonte_normal, cor_texto, botao_dois_jogadores.centerx, 393)  # Centraliza o nome no segundo botão.
+    desenha_texto_centralizado('1 Jogador', fonte_normal, cor_texto, botao_um_jogador.centerx, botao_um_jogador.centery - fonte_normal.get_height() // 2)  # Centraliza o nome no primeiro botão, na horizontal e na vertical.
+    desenha_texto_centralizado('2 Jogadores', fonte_normal, cor_texto, botao_dois_jogadores.centerx, botao_dois_jogadores.centery - fonte_normal.get_height() // 2)  # Centraliza o nome no segundo botão, na horizontal e na vertical.
+    desenha_decoracao_menu()  # Mostra o trechinho de tabuleiro decorativo abaixo dos botões.
 
 
 def desenha_tabuleiro(partida):  # Recebe a partida e desenha as casas com os efeitos já revelados.
@@ -727,6 +742,46 @@ def desenha_personagem(esquerda, topo, cor, progresso=0, direcao=1):  # Recebe p
     desenha_parte_personagem(esquerda, topo, faixa, cor, direcao)  # Desenha a faixa colorida.
     desenha_parte_personagem(esquerda, topo, olho_esquerdo, cor_branca, direcao)  # Desenha o primeiro olho.
     desenha_parte_personagem(esquerda, topo, olho_direito, cor_branca, direcao)  # Desenha o segundo olho.
+
+
+def desenha_personagem_grande(esquerda, topo, cor, escala):  # Desenha o personagem parado numa escala maior, para a tela de nome.
+    pose = pose_parada  # Usa sempre a pose parada, sem animação, nessa tela.
+    for indice in range(len(pose)):  # Percorre todas as partes do personagem.
+        cor_parte = cor_texto  # Usa a cor escura para cabeça e pernas.
+        if 1 <= indice <= 5:  # Identifica o tronco e os quatro segmentos dos braços.
+            cor_parte = cor  # Usa a cor do jogador na roupa e nos braços.
+        x, y, largura_parte, altura_parte = pose[indice]  # Consulta a posição e o tamanho originais da parte.
+        area = (esquerda + x * escala, topo + y * escala, largura_parte * escala, altura_parte * escala)  # Amplia a parte pela escala pedida.
+        pygame.draw.rect(janela, cor_parte, area)  # Desenha a parte já ampliada.
+    cabeca = pose[0]  # Consulta a cabeça para manter a faixa e os olhos presos a ela.
+    faixa = (cabeca[0], cabeca[1], 16, 4)  # Define a faixa nas medidas originais.
+    olho_esquerdo = (cabeca[0] + 3, cabeca[1] + 6, 3, 3)  # Posiciona o primeiro olho.
+    olho_direito = (cabeca[0] + 10, cabeca[1] + 6, 3, 3)  # Posiciona o segundo olho.
+    for retangulo, cor_parte in [(faixa, cor), (olho_esquerdo, cor_branca), (olho_direito, cor_branca)]:  # Percorre a faixa e os dois olhos.
+        x, y, largura_parte, altura_parte = retangulo  # Consulta a posição e o tamanho originais.
+        area = (esquerda + x * escala, topo + y * escala, largura_parte * escala, altura_parte * escala)  # Amplia a parte pela escala pedida.
+        pygame.draw.rect(janela, cor_parte, area)  # Desenha a parte já ampliada.
+
+
+def desenha_tela_nome(partida, indice_jogador_nome, nome_digitado, agora):  # Desenha a tela que pede o nome de um jogador antes do tabuleiro.
+    jogador = partida['jogadores'][indice_jogador_nome]  # Consulta o jogador que está digitando o nome agora.
+    desenha_texto_centralizado(jogador['nome'].upper(), fonte_titulo_jogo, cor_texto, largura_janela // 2, 75)  # Mostra de quem é a vez, bem grande.
+    desenha_personagem_grande(140, 260, jogador['cor'], 7)  # Mostra o bonequinho do jogador numa escala bem maior.
+    caixa = (430, 190, 470, 280)  # Define a área da caixa branca de digitação.
+    pygame.draw.rect(janela, cor_branca, caixa)  # Desenha o fundo da caixa.
+    pygame.draw.rect(janela, cor_preta, caixa, 3)  # Contorna a caixa.
+    desenha_texto('Digite o seu nome:', fonte_normal, cor_texto, caixa[0] + 30, 215)  # Identifica o campo de digitação.
+    pygame.draw.rect(janela, cor_fundo, campo_nome)  # Desenha o fundo do campo.
+    pygame.draw.rect(janela, cor_texto, campo_nome, 2)  # Contorna o campo que já começa ativo.
+    desenha_texto(nome_digitado, fonte_normal, cor_texto, campo_nome.x + 12, campo_nome.y + 18)  # Mostra o nome digitado até agora.
+    if (agora // 500) % 2 == 0:  # Faz o cursor piscar enquanto a pessoa pode digitar.
+        esquerda_cursor = campo_nome.x + 12 + fonte_normal.size(nome_digitado)[0]  # Coloca o cursor depois do último caractere.
+        pygame.draw.line(janela, cor_texto, (esquerda_cursor, campo_nome.y + 14), (esquerda_cursor, campo_nome.y + 43), 2)  # Desenha o cursor.
+    desenha_texto(str(len(nome_digitado)) + '/' + str(limite_nome_caracteres) + ' caracteres', fonte_pequena, cor_texto, caixa[0] + 30, 335)  # Mostra quantos caracteres já foram digitados.
+    pygame.draw.rect(janela, cores_casas[1], botao_confirmar_nome)  # Desenha o fundo do botão de confirmação.
+    pygame.draw.rect(janela, cor_texto, botao_confirmar_nome, 2)  # Contorna o botão.
+    desenha_texto_centralizado('Confirmar', fonte_normal, cor_texto, botao_confirmar_nome.centerx, botao_confirmar_nome.centery - fonte_normal.get_height() // 2)  # Centraliza o texto do botão.
+    desenha_texto_centralizado('ou pressione Enter', fonte_pequena, cor_texto, caixa[0] + caixa[2] // 2, 448)  # Lembra do atalho do teclado.
 
 
 def calcula_animacao_peca(partida, indice, estado, agora):  # Devolve a fração do salto e a orientação dos membros de uma peça.
@@ -1133,6 +1188,8 @@ retangulo_dado = pygame.Rect(810, 495, 120, 120)  # Define a área do dado.
 botao_um_jogador = pygame.Rect(largura_janela // 2 - 150, 280, 300, 65)  # Centraliza a primeira opção do menu.
 botao_dois_jogadores = pygame.Rect(largura_janela // 2 - 150, 370, 300, 65)  # Centraliza a segunda opção do menu.
 botao_confirmar = pygame.Rect(largura_janela // 2 - 100, 365, 200, 55)  # Centraliza o botão das caixas de aviso.
+botao_confirmar_nome = pygame.Rect(650, 390, 200, 50)  # Posiciona o botão de confirmação dentro da caixa de nome.
+campo_nome = pygame.Rect(460, 260, 410, 60)  # Define a área do campo de texto na tela de nome.
 botao_sair = pygame.Rect(20, janela.get_height() - 40, 80, 26)  # Posiciona a saída a vinte pixels da esquerda e dezesseis do fundo, em tamanho reduzido.
 botao_desistir = pygame.Rect(largura_janela - 150, 550, 120, 42)  # Permite abandonar apenas a atividade atual.
 raio_ponto = 24  # Define o tamanho visual e a área clicável de cada ponto.
@@ -1144,6 +1201,9 @@ estado = 'menu'  # Começa na escolha da quantidade de pessoas.
 jogo_ativo = True  # Mantém o loop principal em funcionamento.
 relogio = pygame.time.Clock()  # Limita a velocidade de atualização da janela.
 confetes = []  # Guarda as partículas de confete da tela de vitória.
+nome_digitado = ''  # Guarda o nome sendo digitado antes de começar o tabuleiro.
+indice_jogador_nome = 0  # Indica de qual jogador é a vez de digitar o nome.
+limite_nome_caracteres = 14  # Limita o nome do jogador para não estourar o painel.
 
 # ===== Loop principal =====
 while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
@@ -1182,15 +1242,21 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
                 elif estado in ['aviso', 'fim', 'aviso_atividade']:  # Trata somente o botão da caixa aberta.
                     if botao_confirmar.collidepoint(posicao_mouse):  # Verifica se o botão foi atingido.
                         pedido_confirmacao = True  # Solicita a ação do botão: continuar ou jogar novamente.
+                elif estado == 'digitando_nome':  # Trata o botão da tela de nome.
+                    if botao_confirmar_nome.collidepoint(posicao_mouse):  # Verifica se o botão de confirmar foi atingido.
+                        pedido_confirmacao = True  # Solicita a confirmação do nome digitado.
         elif evento.type == pygame.TEXTINPUT:  # Recebe caracteres já compostos pelo teclado, incluindo acentos.
             if estado == 'atividade':  # Aceita texto somente durante um desafio ativo.
                 if partida['atividade']['tipo'] in ['ditado', 'calculo', 'enigma']:  # Verifica se o desafio atual possui campo de resposta.
                     acoes_texto.append(('digitar', evento.text))  # Guarda as letras sem duplicá-las no evento KEYDOWN.
+            elif estado == 'digitando_nome':  # Aceita texto enquanto o nome está sendo escolhido.
+                if len(nome_digitado) < limite_nome_caracteres:  # Respeita o limite de catorze caracteres.
+                    nome_digitado += evento.text  # Acrescenta o caractere digitado, incluindo espaços e acentos.
         elif evento.type == pygame.KEYDOWN:  # Verifica o pressionamento de uma tecla.
             if evento.key == pygame.K_ESCAPE:  # Reconhece Esc em qualquer estado do jogo.
                 jogo_ativo = False  # Solicita o fechamento da janela em tela cheia.
             elif evento.key == pygame.K_RETURN:  # Reconhece a tecla Enter.
-                if estado in ['aviso', 'fim', 'aviso_atividade']:  # Aceita Enter apenas nas caixas.
+                if estado in ['aviso', 'fim', 'aviso_atividade', 'digitando_nome']:  # Aceita Enter nas caixas e na tela de nome.
                     pedido_confirmacao = True  # Faz o mesmo que clicar no botão.
                 elif estado == 'atividade':  # Verifica se Enter deve confirmar uma resposta.
                     if partida['atividade']['tipo'] in ['ditado', 'calculo', 'enigma']:  # Restringe a confirmação ao desafio de texto.
@@ -1199,6 +1265,8 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
                 if estado == 'atividade':  # Permite editar somente uma atividade em andamento.
                     if partida['atividade']['tipo'] in ['ditado', 'calculo', 'enigma']:  # Restringe a edição ao desafio de texto.
                         acoes_texto.append(('apagar', ''))  # Solicita a remoção do último caractere.
+                elif estado == 'digitando_nome':  # Permite apagar enquanto o nome está sendo escolhido.
+                    nome_digitado = nome_digitado[:-1]  # Remove o último caractere digitado.
 
     # ----- Atualiza a lógica do jogo
     if jogo_ativo:  # Evita atualizar os dados após um pedido de fechamento.
@@ -1206,7 +1274,20 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
         if estado == 'menu':  # Prepara a partida depois da escolha.
             if pedido_inicio != 0:  # Verifica se uma quantidade foi selecionada.
                 partida = cria_partida(pedido_inicio)  # Cria participantes e sorteia efeitos escondidos.
-                estado = 'tabuleiro'  # Libera o primeiro lançamento.
+                indice_jogador_nome = 0  # Começa perguntando o nome do primeiro jogador.
+                nome_digitado = ''  # Garante que o campo comece vazio.
+                pygame.key.set_text_input_rect(campo_nome)  # Informa onde fica o campo de nome.
+                pygame.key.start_text_input()  # Começa a receber texto já na tela de nome.
+                estado = 'digitando_nome'  # Pergunta o nome antes de liberar o tabuleiro.
+        elif estado == 'digitando_nome':  # Aguarda a confirmação do nome de um jogador.
+            if pedido_confirmacao:  # Verifica se a pessoa confirmou o nome, mesmo em branco.
+                if nome_digitado.strip() != '':  # Só substitui o nome padrão se algo foi digitado.
+                    partida['jogadores'][indice_jogador_nome]['nome'] = nome_digitado  # Guarda o nome escolhido.
+                indice_jogador_nome += 1  # Passa para o próximo jogador, se houver.
+                nome_digitado = ''  # Limpa o campo para o próximo nome.
+                if indice_jogador_nome >= len(partida['jogadores']):  # Verifica se todos os nomes já foram pedidos.
+                    pygame.key.stop_text_input()  # Encerra a captura de texto da tela de nome.
+                    estado = 'tabuleiro'  # Libera o primeiro lançamento.
         elif estado == 'tabuleiro':  # Aguarda um lançamento do participante da vez.
             if pedido_dado:  # Verifica o pedido recebido nos eventos.
                 partida['proximo_valor_dado'] = rola_dado()  # Sorteia uma única vez um resultado entre um e quatro.
@@ -1260,6 +1341,9 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
             if estado == 'menu':  # Verifica se a escolha de participantes deve aparecer.
                 janela.fill(cor_fundo_cinza)  # Usa o fundo cinza na tela inicial.
                 desenha_menu()  # Mostra os botões do menu.
+            elif estado == 'digitando_nome':  # Verifica se a tela de nome deve aparecer.
+                janela.fill(cor_fundo_cinza)  # Usa o fundo cinza na tela de nome.
+                desenha_tela_nome(partida, indice_jogador_nome, nome_digitado, agora)  # Mostra o bonequinho e o campo de digitação.
             elif estado == 'aviso_atividade':  # Exibe somente o aviso, sem revelar a resposta ou a pergunta.
                 janela.fill(cor_fundo_cinza)  # Usa o fundo cinza na tela de desafio.
                 tempo_aviso = partida['atividade']['limite'] // 1000  # Consulta o prazo real desta faixa.
