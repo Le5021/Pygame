@@ -1207,7 +1207,7 @@ partida = {}  # Aguarda a escolha do modo para receber os dados da partida.
 retangulo_dado = pygame.Rect(810, 495, 120, 120)  # Define a área do dado.
 botao_um_jogador = pygame.Rect(largura_janela // 2 - 150, 280, 300, 65)  # Centraliza a primeira opção do menu.
 botao_dois_jogadores = pygame.Rect(largura_janela // 2 - 150, 370, 300, 65)  # Centraliza a segunda opção do menu.
-botao_confirmar = pygame.Rect(largura_janela // 2 - 100, 365, 200, 55)  # Centraliza o botão das caixas de aviso.
+botao_confirmar = pygame.Rect(largura_janela // 2 - 140, 365, 280, 55)  # Centraliza o botão das caixas de aviso, já largo o suficiente para caber "Jogar novamente".
 botao_confirmar_nome = pygame.Rect(565, 390, 200, 50)  # Posiciona o botão de confirmação centralizado dentro da caixa branca (caixa vai de x=430 até x=900, centro em x=665).
 campo_nome = pygame.Rect(460, 260, 410, 60)  # Define a área do campo de texto na tela de nome.
 botao_sair = pygame.Rect(20, janela.get_height() - 40, 80, 26)  # Posiciona a saída a vinte pixels da esquerda e dezesseis do fundo, em tamanho reduzido.
