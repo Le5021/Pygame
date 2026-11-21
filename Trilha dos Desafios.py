@@ -1210,3 +1210,4 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
 
 # ===== Finalização =====
 pygame.quit()  # Libera os recursos do pygame e fecha a janela. 
+ 
