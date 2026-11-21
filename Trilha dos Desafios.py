@@ -30,6 +30,7 @@ cor_painel = (229, 233, 224)  # Define o fundo do painel lateral.
 cor_jogador_1 = (100, 50, 185)  # Define o roxo da primeira peça.
 cor_jogador_2 = (220, 55, 85)  # Define o vermelho da segunda peça.
 cores_casas = [(255, 204, 62), (174, 205, 64), (40, 185, 186)]  # Alterna três cores.
+cores_confete = cores_casas + [cor_jogador_1, cor_jogador_2]  # Reaproveita as cores do jogo nos confetes da vitória.
 try:  # Tenta usar a fonte Poppins escolhida para o jogo.
     fonte_titulo = pygame.font.Font('assets/fontes/Poppins-Bold.ttf', 52)  # Cria a fonte dos títulos, maior e mais chamativa.
     fonte_titulo_jogo = pygame.font.Font('assets/fontes/Poppins-Bold.ttf', 56)  # Cria a fonte própria, maior, do título de cada desafio.
@@ -56,6 +57,38 @@ except FileNotFoundError:  # Evita travar o jogo caso os arquivos de fonte não 
     fonte_nivel = pygame.font.Font(None, 22)  # Usa a fonte padrão do pygame para o nível.
     fonte_caixa_titulo = pygame.font.Font(None, 40)  # Usa a fonte padrão do pygame para o título da caixa de aviso.
     fonte_relogio = pygame.font.Font(None, 30)  # Usa a fonte padrão do pygame para o cronômetro, maior, pois o círculo cresceu.
+
+# ----- Carrega sons e músicas
+som_disponivel = True  # Marca se os sons puderam ser carregados, para não travar o jogo sem áudio.
+musica_atual = ''  # Guarda qual trilha está tocando agora, para não reiniciá-la a cada frame.
+som_pulo = None  # Garante que o nome já exista mesmo se o carregamento falhar logo abaixo.
+som_vitoria = None  # Garante que o nome já exista mesmo se o carregamento falhar logo abaixo.
+try:  # Tenta carregar os efeitos sonoros e preparar o mixer de música.
+    pygame.mixer.init()  # Garante que o mixer esteja pronto mesmo se o pygame.init() não tiver ativado o áudio.
+    som_pulo = pygame.mixer.Sound('assets/sons/som_pulo.wav')  # Carrega o efeito tocado a cada passo da peça.
+    som_vitoria = pygame.mixer.Sound('assets/sons/som_vitoria.wav')  # Carrega o efeito tocado quando alguém vence.
+except (FileNotFoundError, pygame.error):  # Evita travar o jogo caso os arquivos de som ou o áudio não estejam disponíveis.
+    som_disponivel = False  # Mantém o jogo funcionando normalmente, apenas sem som.
+
+
+def toca_som(som):  # Toca um efeito sonoro apenas se o áudio estiver disponível.
+    if som_disponivel and som is not None:  # Evita chamar o mixer quando o carregamento falhou.
+        som.play()  # Reproduz o efeito uma única vez.
+
+
+def toca_musica(caminho_arquivo):  # Troca a música de fundo apenas quando ela muda, para não reiniciá-la a cada frame.
+    global musica_atual  # Permite atualizar a trilha atualmente tocando.
+    if not som_disponivel:  # Evita chamar o mixer quando o carregamento falhou.
+        return  # Sai sem fazer nada.
+    if musica_atual == caminho_arquivo:  # Verifica se essa já é a música tocando.
+        return  # Evita reiniciar a mesma música repetidamente.
+    try:  # Tenta trocar a trilha sem travar o jogo em caso de falha do mixer.
+        pygame.mixer.music.load(caminho_arquivo)  # Carrega a nova trilha.
+        pygame.mixer.music.play(-1)  # Toca em loop infinito, como pedido.
+        musica_atual = caminho_arquivo  # Registra a trilha atual.
+    except pygame.error:  # Evita travar caso o arquivo não seja encontrado.
+        pass  # Mantém o jogo em funcionamento mesmo sem essa música.
+
 
 # ----- Define funções de preparação
 def cria_casas():  # Devolve os retângulos das casas na ordem do percurso.
@@ -167,6 +200,7 @@ def atualiza_movimento(partida, agora):  # Recebe a partida e o tempo atual; dev
             jogador['posicao'] += partida['direcao_movimento']  # Move exatamente uma casa.
             partida['passos_restantes'] -= 1  # Desconta o passo realizado.
             partida['instante_ultimo_passo'] = agora  # Registra o instante deste passo.
+            toca_som(som_pulo)  # Toca o som de pulo a cada casa percorrida.
     return partida['passos_restantes'] == 0  # Informa se todos os passos foram realizados.
 
 
@@ -829,6 +863,44 @@ def desenha_caixa(titulo, mensagem, texto_botao):  # Recebe os textos do aviso o
         desenha_texto_centralizado('Clique no botão ou pressione Enter.', fonte_pequena, cor_texto, largura_janela // 2, 430)  # Explica os dois controles.
 
 
+def cria_confetes(quantidade):  # Cria as partículas de confete mostradas atrás da caixa de vitória.
+    lista = []  # Guarda cada confete criado.
+    for _ in range(quantidade):  # Repete para cada partícula pedida.
+        lista.append({
+            'x': random.uniform(0, largura_janela),  # Sorteia a posição horizontal inicial.
+            'y': random.uniform(-altura_janela, 0),  # Começa acima da tela, em alturas variadas.
+            'vx': random.uniform(-25, 25),  # Sorteia um leve desvio lateral.
+            'vy': random.uniform(90, 180),  # Sorteia a velocidade de queda.
+            'largura': random.uniform(6, 13),  # Sorteia a largura do retângulo.
+            'altura': random.uniform(10, 18),  # Sorteia a altura do retângulo.
+            'angulo': random.uniform(0, 360),  # Sorteia o ângulo inicial de rotação.
+            'vangulo': random.uniform(-180, 180),  # Sorteia a velocidade de rotação.
+            'cor': random.choice(cores_confete)  # Sorteia uma cor já usada no jogo.
+        })
+    return lista  # Devolve a lista pronta para ser animada.
+
+
+def atualiza_confetes(confetes, segundos_passados):  # Move cada confete e o faz reaparecer no topo ao sair por baixo da tela.
+    for confete in confetes:  # Percorre cada partícula.
+        confete['y'] += confete['vy'] * segundos_passados  # Aplica a queda.
+        confete['x'] += confete['vx'] * segundos_passados  # Aplica o desvio lateral.
+        confete['angulo'] += confete['vangulo'] * segundos_passados  # Aplica a rotação.
+        if confete['y'] > altura_janela + 20:  # Verifica se o confete já saiu por baixo da tela.
+            confete['y'] = random.uniform(-40, -10)  # Faz reaparecer acima da tela.
+            confete['x'] = random.uniform(0, largura_janela)  # Sorteia uma nova posição horizontal.
+
+
+def desenha_confetes(confetes):  # Desenha cada confete como um pequeno retângulo girado.
+    for confete in confetes:  # Percorre cada partícula.
+        meia_largura = confete['largura'] / 2  # Calcula a metade da largura para centralizar o giro.
+        meia_altura = confete['altura'] / 2  # Calcula a metade da altura para centralizar o giro.
+        cantos = [(-meia_largura, -meia_altura), (meia_largura, -meia_altura), (meia_largura, meia_altura), (-meia_largura, meia_altura)]  # Define os quatro cantos do retângulo.
+        radianos = math.radians(confete['angulo'])  # Converte o ângulo atual para radianos.
+        cosseno = math.cos(radianos)  # Calcula o cosseno do ângulo.
+        seno = math.sin(radianos)  # Calcula o seno do ângulo.
+        pontos = [(confete['x'] + x * cosseno - y * seno, confete['y'] + x * seno + y * cosseno) for x, y in cantos]  # Gira e desloca cada canto.
+        pygame.draw.polygon(janela, confete['cor'], pontos)  # Desenha o confete já girado.
+
 
 def desenha_pontos(atividade):  # Recebe o desafio de pontos para desenhar suas conexões e seu progresso.
     for ligacao in atividade['ligacoes']:  # Percorre as conexões já concluídas.
@@ -1071,6 +1143,7 @@ duracao_resultado = 900  # Exibe o fim do turno por 900 milissegundos.
 estado = 'menu'  # Começa na escolha da quantidade de pessoas.
 jogo_ativo = True  # Mantém o loop principal em funcionamento.
 relogio = pygame.time.Clock()  # Limita a velocidade de atualização da janela.
+confetes = []  # Guarda as partículas de confete da tela de vitória.
 
 # ===== Loop principal =====
 while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
@@ -1149,6 +1222,9 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
         elif estado == 'movimento':  # Executa os passos sem pausar o programa.
             if atualiza_movimento(partida, agora):  # Verifica se a peça terminou de andar.
                 estado = resolve_parada(partida, agora)  # Decide entre aviso, fim do turno ou vitória.
+                if estado == 'fim':  # Verifica se essa parada foi a chegada.
+                    confetes = cria_confetes(90)  # Cria a chuva de confetes para a tela de vitória.
+                    toca_som(som_vitoria)  # Toca o som de vitória uma única vez.
         elif estado == 'aviso':  # Mantém o efeito pendente enquanto a caixa está aberta.
             if pedido_confirmacao:  # Verifica se a pessoa leu e fechou o aviso.
                 estado = aplica_casa_especial(partida, agora)  # Revela a casa e aplica seu efeito.
@@ -1177,6 +1253,10 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
 
         # ----- Gera saídas
         if jogo_ativo:  # Desenha somente enquanto a janela deve permanecer aberta.
+            if estado in ('aviso_atividade', 'atividade', 'resultado_atividade'):  # Verifica se o jogador está em um desafio.
+                toca_musica('assets/sons/musica_desafio.wav')  # Toca a música do desafio.
+            else:  # Cobre o menu e todas as telas do tabuleiro.
+                toca_musica('assets/sons/musica_tabuleiro.wav')  # Toca a música principal, interrompida apenas pelo desafio.
             if estado == 'menu':  # Verifica se a escolha de participantes deve aparecer.
                 janela.fill(cor_fundo_cinza)  # Usa o fundo cinza na tela inicial.
                 desenha_menu()  # Mostra os botões do menu.
@@ -1202,6 +1282,8 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
                 if estado == 'aviso':  # Verifica se há uma casa especial aguardando confirmação.
                     desenha_caixa('CASA ESPECIAL', partida['mensagem_aviso'], 'Continuar')  # Sobrepõe o aviso.
                 elif estado == 'fim':  # Verifica se alguém alcançou a última casa.
+                    atualiza_confetes(confetes, 1 / 60)  # Anima a queda dos confetes a cada frame.
+                    desenha_confetes(confetes)  # Desenha os confetes atrás da caixa de vitória.
                     desenha_caixa('CHEGADA!', partida['vencedor'] + ' venceu!', 'Jogar novamente')  # Mostra a vitória e permite começar outra partida.
             desenha_botao_sair()  # Mantém a saída visível por cima de qualquer tela ou caixa.
             pygame.display.update()  # Apresenta o frame completo na janela.
