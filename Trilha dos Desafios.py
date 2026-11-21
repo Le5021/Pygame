@@ -3,7 +3,19 @@
 import pygame  # Fornece janela, eventos, textos e desenhos.
 import random  # Permite sortear o valor do dado.
 import math  # Permite calcular os ângulos do relógio do cronômetro.
+import os  # Permite descobrir a pasta do próprio arquivo, para achar as fontes e os sons não importa de onde o jogo for executado.
 
+pasta_jogo = os.path.dirname(os.path.abspath(__file__))  # Guarda a pasta onde este arquivo .py está salvo.
+
+
+def caminho_recurso(caminho_relativo):  # Monta o caminho completo de um arquivo dentro da pasta do jogo.
+    return os.path.join(pasta_jogo, caminho_relativo)  # Junta a pasta do jogo com o caminho pedido, como caminho_recurso('assets/sons/som_pulo.wav').
+
+
+try:  # Prepara o áudio com uma configuração mais compatível antes de iniciar o pygame.
+    pygame.mixer.pre_init(44100, -16, 2, 1024)  # Define frequência, formato e buffer antes do pygame.init(), o que evita som ausente em algumas placas de som.
+except pygame.error:  # Evita travar caso o próprio pre_init falhe.
+    pass  # Deixa o pygame.init() tentar com os valores padrão.
 pygame.init()  # Inicia os recursos do pygame.
 pygame.key.stop_text_input()  # Mantém a digitação desativada até começar uma atividade de texto.
 
@@ -32,18 +44,19 @@ cor_jogador_2 = (220, 55, 85)  # Define o vermelho da segunda peça.
 cores_casas = [(255, 204, 62), (174, 205, 64), (40, 185, 186)]  # Alterna três cores.
 cores_confete = cores_casas + [cor_jogador_1, cor_jogador_2]  # Reaproveita as cores do jogo nos confetes da vitória.
 try:  # Tenta usar a fonte Poppins escolhida para o jogo.
-    fonte_titulo = pygame.font.Font('assets/fontes/Poppins-Bold.ttf', 52)  # Cria a fonte dos títulos, maior e mais chamativa.
-    fonte_titulo_jogo = pygame.font.Font('assets/fontes/Poppins-Bold.ttf', 56)  # Cria a fonte própria, maior, do título de cada desafio.
-    fonte_normal = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 26)  # Cria a fonte dos textos.
-    fonte_instrucao = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 22)  # Cria a fonte, um pouco menor, da instrução de cada desafio.
-    fonte_pequena = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 20)  # Cria a fonte das legendas.
-    fonte_frase = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 24)  # Cria a fonte maior da frase do ditado e do enigma.
-    fonte_subtitulo = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 20)  # Cria a fonte maior do subtítulo do tabuleiro.
-    fonte_painel = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 16)  # Cria a fonte menor das legendas próximas ao dado.
-    fonte_relogio = pygame.font.Font('assets/fontes/Poppins-Bold.ttf', 28)  # Cria a fonte em negrito do cronômetro, maior, pois o círculo cresceu.
-    fonte_jogador = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 30)  # Cria a fonte maior do nome do jogador na tela de desafio.
-    fonte_nivel = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 20)  # Cria a fonte maior do nível na tela de desafio.
-    fonte_caixa_titulo = pygame.font.Font('assets/fontes/Poppins-Bold.ttf', 38)  # Cria uma fonte própria para o título da caixa de aviso, que é mais estreita.
+    fonte_titulo = pygame.font.Font(caminho_recurso('assets/fontes/Poppins-Bold.ttf'), 52)  # Cria a fonte dos títulos, maior e mais chamativa.
+    fonte_titulo_jogo = pygame.font.Font(caminho_recurso('assets/fontes/Poppins-Bold.ttf'), 56)  # Cria a fonte própria, maior, do título de cada desafio.
+    fonte_normal = pygame.font.Font(caminho_recurso('assets/fontes/Poppins-Medium.ttf'), 26)  # Cria a fonte dos textos.
+    fonte_instrucao = pygame.font.Font(caminho_recurso('assets/fontes/Poppins-Medium.ttf'), 22)  # Cria a fonte, um pouco menor, da instrução de cada desafio.
+    fonte_pequena = pygame.font.Font(caminho_recurso('assets/fontes/Poppins-Medium.ttf'), 20)  # Cria a fonte das legendas.
+    fonte_frase = pygame.font.Font(caminho_recurso('assets/fontes/Poppins-Medium.ttf'), 24)  # Cria a fonte maior da frase do ditado e do enigma.
+    fonte_aviso_atividade = pygame.font.Font(caminho_recurso('assets/fontes/Poppins-Medium.ttf'), 22)  # Cria uma fonte um pouco menor para o aviso de tempo, que é mais longo.
+    fonte_subtitulo = pygame.font.Font(caminho_recurso('assets/fontes/Poppins-Medium.ttf'), 20)  # Cria a fonte maior do subtítulo do tabuleiro.
+    fonte_painel = pygame.font.Font(caminho_recurso('assets/fontes/Poppins-Medium.ttf'), 16)  # Cria a fonte menor das legendas próximas ao dado.
+    fonte_relogio = pygame.font.Font(caminho_recurso('assets/fontes/Poppins-Bold.ttf'), 28)  # Cria a fonte em negrito do cronômetro, maior, pois o círculo cresceu.
+    fonte_jogador = pygame.font.Font(caminho_recurso('assets/fontes/Poppins-Medium.ttf'), 30)  # Cria a fonte maior do nome do jogador na tela de desafio.
+    fonte_nivel = pygame.font.Font(caminho_recurso('assets/fontes/Poppins-Medium.ttf'), 20)  # Cria a fonte maior do nível na tela de desafio.
+    fonte_caixa_titulo = pygame.font.Font(caminho_recurso('assets/fontes/Poppins-Bold.ttf'), 38)  # Cria uma fonte própria para o título da caixa de aviso, que é mais estreita.
 except FileNotFoundError:  # Evita travar o jogo caso os arquivos de fonte não estejam na pasta assets.
     fonte_titulo = pygame.font.Font(None, 52)  # Usa a fonte padrão do pygame para títulos.
     fonte_titulo_jogo = pygame.font.Font(None, 58)  # Usa a fonte padrão do pygame para o título de cada desafio.
@@ -51,6 +64,7 @@ except FileNotFoundError:  # Evita travar o jogo caso os arquivos de fonte não 
     fonte_instrucao = pygame.font.Font(None, 24)  # Usa a fonte padrão do pygame para a instrução de cada desafio.
     fonte_pequena = pygame.font.Font(None, 22)  # Usa a fonte padrão do pygame para legendas.
     fonte_frase = pygame.font.Font(None, 26)  # Usa a fonte padrão do pygame para a frase do ditado e do enigma.
+    fonte_aviso_atividade = pygame.font.Font(None, 24)  # Usa a fonte padrão do pygame, um pouco menor, para o aviso de tempo.
     fonte_subtitulo = pygame.font.Font(None, 22)  # Usa a fonte padrão do pygame para o subtítulo.
     fonte_painel = pygame.font.Font(None, 18)  # Usa a fonte padrão do pygame para as legendas próximas ao dado.
     fonte_jogador = pygame.font.Font(None, 32)  # Usa a fonte padrão do pygame para o nome do jogador.
@@ -65,10 +79,14 @@ som_pulo = None  # Garante que o nome já exista mesmo se o carregamento falhar 
 som_vitoria = None  # Garante que o nome já exista mesmo se o carregamento falhar logo abaixo.
 try:  # Tenta carregar os efeitos sonoros e preparar o mixer de música.
     pygame.mixer.init()  # Garante que o mixer esteja pronto mesmo se o pygame.init() não tiver ativado o áudio.
-    som_pulo = pygame.mixer.Sound('assets/sons/som_pulo.wav')  # Carrega o efeito tocado a cada passo da peça.
-    som_vitoria = pygame.mixer.Sound('assets/sons/som_vitoria.wav')  # Carrega o efeito tocado quando alguém vence.
-except (FileNotFoundError, pygame.error):  # Evita travar o jogo caso os arquivos de som ou o áudio não estejam disponíveis.
+    som_pulo = pygame.mixer.Sound(caminho_recurso('assets/sons/som_pulo.wav'))  # Carrega o efeito tocado a cada passo da peça.
+    som_vitoria = pygame.mixer.Sound(caminho_recurso('assets/sons/som_vitoria.wav'))  # Carrega o efeito tocado quando alguém vence.
+    som_pulo.set_volume(1.0)  # Garante que o efeito não comece com o volume baixo.
+    som_vitoria.set_volume(1.0)  # Garante que o efeito não comece com o volume baixo.
+    print('Áudio carregado com sucesso. Mixer:', pygame.mixer.get_init())  # Confirma no terminal que o som está pronto.
+except (FileNotFoundError, pygame.error) as erro:  # Evita travar o jogo caso os arquivos de som ou o áudio não estejam disponíveis.
     som_disponivel = False  # Mantém o jogo funcionando normalmente, apenas sem som.
+    print('Não foi possível carregar o áudio:', erro)  # Mostra o motivo exato no terminal, para facilitar a correção.
 
 
 def toca_som(som):  # Toca um efeito sonoro apenas se o áudio estiver disponível.
@@ -84,10 +102,11 @@ def toca_musica(caminho_arquivo):  # Troca a música de fundo apenas quando ela 
         return  # Evita reiniciar a mesma música repetidamente.
     try:  # Tenta trocar a trilha sem travar o jogo em caso de falha do mixer.
         pygame.mixer.music.load(caminho_arquivo)  # Carrega a nova trilha.
+        pygame.mixer.music.set_volume(1.0)  # Garante que a música não comece com o volume baixo.
         pygame.mixer.music.play(-1)  # Toca em loop infinito, como pedido.
         musica_atual = caminho_arquivo  # Registra a trilha atual.
-    except pygame.error:  # Evita travar caso o arquivo não seja encontrado.
-        pass  # Mantém o jogo em funcionamento mesmo sem essa música.
+    except pygame.error as erro:  # Evita travar caso o arquivo não seja encontrado.
+        print('Não foi possível tocar', caminho_arquivo, ':', erro)  # Mostra o motivo exato no terminal.
 
 
 # ----- Define funções de preparação
@@ -781,7 +800,6 @@ def desenha_tela_nome(partida, indice_jogador_nome, nome_digitado, agora):  # De
     pygame.draw.rect(janela, cores_casas[1], botao_confirmar_nome)  # Desenha o fundo do botão de confirmação.
     pygame.draw.rect(janela, cor_texto, botao_confirmar_nome, 2)  # Contorna o botão.
     desenha_texto_centralizado('Confirmar', fonte_normal, cor_texto, botao_confirmar_nome.centerx, botao_confirmar_nome.centery - fonte_normal.get_height() // 2)  # Centraliza o texto do botão.
-    desenha_texto_centralizado('ou pressione Enter', fonte_pequena, cor_texto, caixa[0] + caixa[2] // 2, 448)  # Lembra do atalho do teclado.
 
 
 def calcula_animacao_peca(partida, indice, estado, agora):  # Devolve a fração do salto e a orientação dos membros de uma peça.
@@ -905,15 +923,17 @@ def desenha_painel(partida, estado, agora):  # Recebe a partida e o estado para 
         desenha_texto_centralizado('Dado bloqueado', fonte_pequena, cor_texto, retangulo_dado.centerx, 625)  # Explica por que o clique não funciona.
 
 
-def desenha_caixa(titulo, mensagem, texto_botao):  # Recebe os textos do aviso ou da vitória.
+def desenha_caixa(titulo, mensagem, texto_botao, fonte_mensagem=None):  # Recebe os textos do aviso ou da vitória; fonte_mensagem permite usar uma fonte menor quando o texto for mais longo.
+    if fonte_mensagem is None:  # Usa a fonte padrão quando nenhuma for especificada.
+        fonte_mensagem = fonte_normal  # Mantém o tamanho de sempre para as mensagens curtas (casa especial e vitória).
     pygame.draw.rect(janela, cor_sombra, (largura_janela // 2 - 332, 213, 680, 250))  # Desenha a sombra da caixa centralizada.
     pygame.draw.rect(janela, cor_branca, (largura_janela // 2 - 340, 205, 680, 250))  # Desenha a caixa sobre o tabuleiro.
     pygame.draw.rect(janela, cor_texto, (largura_janela // 2 - 340, 205, 680, 250), 3)  # Desenha o contorno da caixa.
     desenha_texto_centralizado(titulo, fonte_caixa_titulo, cor_texto, largura_janela // 2, 235)  # Centraliza o título, em fonte própria para caber na caixa mais estreita.
-    desenha_texto_centralizado(mensagem, fonte_normal, cor_texto, largura_janela // 2, 300)  # Centraliza o aviso.
+    desenha_texto_centralizado(mensagem, fonte_mensagem, cor_texto, largura_janela // 2, 300)  # Centraliza o aviso.
     pygame.draw.rect(janela, cores_casas[1], botao_confirmar)  # Desenha o botão de confirmação.
     pygame.draw.rect(janela, cor_texto, botao_confirmar, 2)  # Contorna o botão.
-    desenha_texto_centralizado(texto_botao, fonte_normal, cor_texto, botao_confirmar.centerx, 382)  # Mostra o texto do botão.
+    desenha_texto_centralizado(texto_botao, fonte_normal, cor_texto, botao_confirmar.centerx, botao_confirmar.centery - fonte_normal.get_height() // 2)  # Centraliza o texto no meio do botão verde.
     if texto_botao != 'Começar':  # Remove a explicação redundante apenas nas telas de preparação do desafio.
         desenha_texto_centralizado('Clique no botão ou pressione Enter.', fonte_pequena, cor_texto, largura_janela // 2, 430)  # Explica os dois controles.
 
@@ -1188,7 +1208,7 @@ retangulo_dado = pygame.Rect(810, 495, 120, 120)  # Define a área do dado.
 botao_um_jogador = pygame.Rect(largura_janela // 2 - 150, 280, 300, 65)  # Centraliza a primeira opção do menu.
 botao_dois_jogadores = pygame.Rect(largura_janela // 2 - 150, 370, 300, 65)  # Centraliza a segunda opção do menu.
 botao_confirmar = pygame.Rect(largura_janela // 2 - 100, 365, 200, 55)  # Centraliza o botão das caixas de aviso.
-botao_confirmar_nome = pygame.Rect(650, 390, 200, 50)  # Posiciona o botão de confirmação dentro da caixa de nome.
+botao_confirmar_nome = pygame.Rect(565, 390, 200, 50)  # Posiciona o botão de confirmação centralizado dentro da caixa branca (caixa vai de x=430 até x=900, centro em x=665).
 campo_nome = pygame.Rect(460, 260, 410, 60)  # Define a área do campo de texto na tela de nome.
 botao_sair = pygame.Rect(20, janela.get_height() - 40, 80, 26)  # Posiciona a saída a vinte pixels da esquerda e dezesseis do fundo, em tamanho reduzido.
 botao_desistir = pygame.Rect(largura_janela - 150, 550, 120, 42)  # Permite abandonar apenas a atividade atual.
@@ -1334,10 +1354,10 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
 
         # ----- Gera saídas
         if jogo_ativo:  # Desenha somente enquanto a janela deve permanecer aberta.
-            if estado in ('aviso_atividade', 'atividade', 'resultado_atividade'):  # Verifica se o jogador está em um desafio.
-                toca_musica('assets/sons/musica_desafio.wav')  # Toca a música do desafio.
-            else:  # Cobre o menu e todas as telas do tabuleiro.
-                toca_musica('assets/sons/musica_tabuleiro.wav')  # Toca a música principal, interrompida apenas pelo desafio.
+            if estado == 'menu':  # Verifica se ainda está na tela inicial, antes de a partida começar.
+                toca_musica(caminho_recurso('assets/sons/musica_tabuleiro.wav'))  # Toca a música do tabuleiro apenas na tela inicial.
+            else:  # Cobre a digitação do nome, o tabuleiro e os cinco desafios.
+                toca_musica(caminho_recurso('assets/sons/musica_desafio.wav'))  # Toca a música do desafio durante todo o restante do jogo.
             if estado == 'menu':  # Verifica se a escolha de participantes deve aparecer.
                 janela.fill(cor_fundo_cinza)  # Usa o fundo cinza na tela inicial.
                 desenha_menu()  # Mostra os botões do menu.
@@ -1351,7 +1371,7 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
                 titulo_aviso = 'PREPARE-SE PARA O DITADO'  # Identifica o desafio que será iniciado.
                 if partida['atividade']['tipo'] == 'enigma':  # Distingue as duas atividades com aviso.
                     titulo_aviso = 'PREPARE-SE PARA O ENIGMA'  # Não revela a pergunta antes de começar.
-                desenha_caixa(titulo_aviso, mensagem_aviso, 'Começar')  # Aguarda uma ação voluntária.
+                desenha_caixa(titulo_aviso, mensagem_aviso, 'Começar', fonte_aviso_atividade)  # Aguarda uma ação voluntária, com fonte menor para o aviso caber na caixa.
                 desenha_texto_centralizado('O tempo começa ao clicar em Começar ou pressionar Enter.', fonte_pequena, cor_texto, largura_janela // 2, 475)  # Explica quando começa a contagem.
             elif estado == 'atividade' or estado == 'resultado_atividade':  # Verifica se a atividade ou seu resultado deve aparecer.
                 janela.fill(cor_fundo_cinza)  # Usa o fundo cinza na tela de desafio.
