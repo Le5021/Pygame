@@ -2,6 +2,7 @@
 # ----- Importa e inicia pacotes
 import pygame  # Fornece janela, eventos, textos e desenhos.
 import random  # Permite sortear o valor do dado.
+import math  # Permite calcular os ângulos do relógio do cronômetro.
 
 pygame.init()  # Inicia os recursos do pygame.
 pygame.key.stop_text_input()  # Mantém a digitação desativada até começar uma atividade de texto.
@@ -12,7 +13,7 @@ altura_janela = 680  # Define a altura da janela em pixels.
 janela = pygame.display.set_mode((largura_janela, altura_janela), pygame.FULLSCREEN)  # Abre o jogo em tela cheia.
 largura_janela = janela.get_width()  # Consulta a largura efetiva caso o computador ajuste o modo de tela cheia.
 altura_janela = janela.get_height()  # Consulta a altura efetiva para posicionar a saída junto ao rodapé.
-pygame.display.set_caption('Trilha dos desafios - Etapa 4E - cinco desafios')  # Define o título.
+pygame.display.set_caption('Trilha dos Desafios')  # Define o título.
 
 # ----- Define cores e fontes
 cor_fundo = (245, 242, 230)  # Define o fundo claro.
@@ -21,6 +22,8 @@ cor_texto = (30, 42, 52)  # Define a cor escura dos textos e contornos.
 cor_sair = (190, 35, 50)  # Define o vermelho do botão de saída e dos avisos de tempo.
 cor_branca = (255, 255, 255)  # Define o branco do dado e dos olhos.
 cor_preta = (0, 0, 0)  # Define o preto das bolinhas do dado.
+cor_relogio_clara = (255, 222, 173)  # Define o tom mais claro do gradiente do cronômetro circular.
+cor_relogio_escura = (230, 126, 34)  # Define o tom mais escuro do gradiente do cronômetro circular.
 cor_sombra = (207, 199, 178)  # Define a sombra das casas.
 cor_perde_vez = (240, 120, 130)  # Marca uma casa revelada que encerra o turno.
 cor_avanca = (100, 205, 130)  # Marca uma casa revelada que faz avançar.
@@ -29,9 +32,20 @@ cor_painel = (229, 233, 224)  # Define o fundo do painel lateral.
 cor_jogador_1 = (100, 50, 185)  # Define o roxo da primeira peça.
 cor_jogador_2 = (220, 55, 85)  # Define o vermelho da segunda peça.
 cores_casas = [(255, 204, 62), (174, 205, 64), (40, 185, 186)]  # Alterna três cores.
-fonte_titulo = pygame.font.Font(None, 44)  # Cria a fonte padrão para títulos.
-fonte_normal = pygame.font.Font(None, 28)  # Cria a fonte padrão para textos.
-fonte_pequena = pygame.font.Font(None, 22)  # Cria a fonte padrão para legendas.
+try:  # Tenta usar a fonte Poppins escolhida para o jogo.
+    fonte_titulo = pygame.font.Font('assets/fontes/Poppins-Bold.ttf', 44)  # Cria a fonte dos títulos.
+    fonte_normal = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 26)  # Cria a fonte dos textos.
+    fonte_pequena = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 20)  # Cria a fonte das legendas.
+    fonte_subtitulo = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 16)  # Cria a fonte menor do subtítulo do tabuleiro.
+    fonte_painel = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 16)  # Cria a fonte menor das legendas próximas ao dado.
+    fonte_relogio = pygame.font.Font('assets/fontes/Poppins-Bold.ttf', 18)  # Cria a fonte em negrito do cronômetro circular, já no tamanho que cabe dentro do anel.
+except FileNotFoundError:  # Evita travar o jogo caso os arquivos de fonte não estejam na pasta assets.
+    fonte_titulo = pygame.font.Font(None, 44)  # Usa a fonte padrão do pygame para títulos.
+    fonte_normal = pygame.font.Font(None, 28)  # Usa a fonte padrão do pygame para textos.
+    fonte_pequena = pygame.font.Font(None, 22)  # Usa a fonte padrão do pygame para legendas.
+    fonte_subtitulo = pygame.font.Font(None, 18)  # Usa a fonte padrão do pygame para o subtítulo.
+    fonte_painel = pygame.font.Font(None, 18)  # Usa a fonte padrão do pygame para as legendas próximas ao dado.
+    fonte_relogio = pygame.font.Font(None, 20)  # Usa a fonte padrão do pygame para o cronômetro circular, já no tamanho que cabe dentro do anel.
 
 # ----- Define funções de preparação
 def cria_casas():  # Devolve os retângulos das casas na ordem do percurso.
@@ -590,14 +604,13 @@ def desenha_texto_centralizado(texto, fonte, cor, centro_horizontal, topo):  # R
 
 def desenha_menu():  # Mostra as opções de quantidade de jogadores.
     desenha_texto_centralizado('TRILHA DOS DESAFIOS', fonte_titulo, cor_texto, largura_janela // 2, 160)  # Centraliza o título na janela.
-    desenha_texto_centralizado('Escolha quantas pessoas vão jogar:', fonte_normal, cor_texto, largura_janela // 2, 230)  # Centraliza a instrução na janela.
+    desenha_texto_centralizado('Escolha quantas pessoas irão jogar:', fonte_normal, cor_texto, largura_janela // 2, 230)  # Centraliza a instrução na janela.
     pygame.draw.rect(janela, cores_casas[1], botao_um_jogador)  # Desenha a primeira opção.
     pygame.draw.rect(janela, cores_casas[2], botao_dois_jogadores)  # Desenha a segunda opção.
     pygame.draw.rect(janela, cor_texto, botao_um_jogador, 2)  # Contorna o primeiro botão.
     pygame.draw.rect(janela, cor_texto, botao_dois_jogadores, 2)  # Contorna o segundo botão.
-    desenha_texto_centralizado('1 jogador', fonte_normal, cor_texto, botao_um_jogador.centerx, 303)  # Centraliza o nome no primeiro botão.
-    desenha_texto_centralizado('2 jogadores', fonte_normal, cor_texto, botao_dois_jogadores.centerx, 393)  # Centraliza o nome no segundo botão.
-    desenha_texto_centralizado('Etapa 4E: pontos, blocos, ditados, cálculos e enigmas.', fonte_pequena, cor_texto, largura_janela // 2, 490)  # Explica esta versão.
+    desenha_texto_centralizado('1 Jogador', fonte_normal, cor_texto, botao_um_jogador.centerx, 303)  # Centraliza o nome no primeiro botão.
+    desenha_texto_centralizado('2 Jogadores', fonte_normal, cor_texto, botao_dois_jogadores.centerx, 393)  # Centraliza o nome no segundo botão.
 
 
 def desenha_tabuleiro(partida):  # Recebe a partida e desenha as casas com os efeitos já revelados.
@@ -767,7 +780,8 @@ def desenha_dado(partida, estado, agora):  # Desenha o dado parado ou durante su
 
 def desenha_painel(partida, estado, agora):  # Recebe a partida e o estado para mostrar as instruções adequadas.
     pygame.draw.rect(janela, cor_painel, (760, 100, 220, 550))  # Desenha o painel lateral.
-    desenha_texto('PARTICIPANTES', fonte_normal, cor_texto, 780, 125)  # Identifica a legenda.
+    pygame.draw.rect(janela, cor_preta, (760, 100, 220, 550), 3)  # Contorna o painel com borda preta para destacá-lo.
+    desenha_texto_centralizado('PARTICIPANTES', fonte_normal, cor_texto, 870, 125)  # Centraliza a legenda dentro do painel.
     for indice in range(len(partida['jogadores'])):  # Percorre os participantes da partida.
         jogador = partida['jogadores'][indice]  # Consulta os dados do participante.
         altura_legenda = 175 + indice * 55  # Calcula a altura de cada nome.
@@ -784,10 +798,9 @@ def desenha_painel(partida, estado, agora):  # Recebe a partida e o estado para 
         'resultado': 'Turno encerrado',  # Indica a espera antes do próximo turno.
         'fim': 'Partida encerrada'  # Informa que a chegada foi alcançada.
     }
-    desenha_texto_centralizado(instrucoes[estado], fonte_normal, cor_texto, retangulo_dado.centerx, 320)  # Centraliza a instrução.
-    desenha_texto_centralizado(jogador_atual['nome'], fonte_pequena, cor_texto, retangulo_dado.centerx, 365)  # Identifica quem está jogando.
-    desenha_texto_centralizado('Casa ' + str(jogador_atual['posicao'] + 1) + ' de 20', fonte_pequena, cor_texto, retangulo_dado.centerx, 390)  # Mostra a posição.
-    desenha_texto_centralizado(partida['mensagem'], fonte_pequena, cor_texto, retangulo_dado.centerx, 440)  # Centraliza a mensagem do turno.
+    desenha_texto_centralizado(instrucoes[estado], fonte_pequena, cor_texto, retangulo_dado.centerx, 400)  # Centraliza a instrução, próxima ao dado, em fonte menor.
+    desenha_texto_centralizado(jogador_atual['nome'], fonte_painel, cor_texto, retangulo_dado.centerx, 435)  # Identifica quem está jogando, próximo ao dado, em fonte menor.
+    desenha_texto_centralizado(partida['mensagem'], fonte_painel, cor_texto, retangulo_dado.centerx, 463)  # Centraliza a mensagem do turno, logo acima do dado, em fonte menor.
     desenha_dado(partida, estado, agora)  # Mostra a última face sorteada.
     if estado != 'tabuleiro':  # Verifica se o lançamento está bloqueado.
         desenha_texto_centralizado('Dado bloqueado', fonte_pequena, cor_texto, retangulo_dado.centerx, 625)  # Explica por que o clique não funciona.
@@ -834,7 +847,6 @@ def desenha_pilhas(atividade):  # Recebe o desafio de blocos para desenhar todas
             cor_borda = cor_texto  # Destaca a seleção com uma borda escura.
         pygame.draw.rect(janela, cor_fundo, area)  # Desenha o fundo da área clicável.
         pygame.draw.rect(janela, cor_borda, area, 4)  # Contorna a área da pilha.
-        desenha_texto_centralizado('Pilha ' + str(indice + 1), fonte_normal, cor_texto, area.centerx, 185)  # Numera as pilhas.
         for nivel in range(capacidade_pilha):  # Desenha os dois espaços disponíveis nesta pilha.
             topo = area.bottom - 16 - (nivel + 1) * 86  # Calcula a altura do espaço a partir da base.
             espaco = pygame.Rect(area.x + 15, topo, area.width - 30, 78)  # Define o retângulo de um bloco.
@@ -842,7 +854,6 @@ def desenha_pilhas(atividade):  # Recebe o desafio de blocos para desenhar todas
             if nivel < len(pilha):  # Verifica se existe um bloco ocupando esse nível.
                 pygame.draw.rect(janela, pilha[nivel], espaco)  # Desenha a cor do bloco.
                 pygame.draw.rect(janela, cor_texto, espaco, 2)  # Contorna o bloco para separar as peças.
-        desenha_texto_centralizado(str(len(pilha)) + '/2', fonte_pequena, cor_texto, area.centerx, 510)  # Mostra a ocupação da pilha.
     prontas = conta_pilhas_prontas(atividade['pilhas'])  # Conta as pilhas completas e de uma cor.
     desenha_texto_centralizado('Pilhas prontas: ' + str(prontas) + '/' + str(atividade['quantidade_cores']), fonte_normal, cor_texto, largura_janela // 2, 552)  # Mostra o progresso.
 
@@ -874,9 +885,10 @@ def desenha_resposta_digitada(atividade, agora):  # Recebe o desafio e o tempo p
             frase = 'Resposta: ' + atividade['respostas'][0]  # Mostra a resposta por extenso.
         else:  # Completa a palavra do ditado.
             frase = frase.replace('______', atividade['respostas'][0])  # Mostra o ditado completo depois do acerto.
-    linhas = quebra_texto(frase, fonte_normal, 620)  # Divide frases longas para evitar que ultrapassem o quadro.
+    fonte_frase = fonte_pequena if atividade['tipo'] in ('ditado', 'enigma') else fonte_normal  # Reduz a fonte da frase do ditado e do enigma para não ultrapassar a caixa.
+    linhas = quebra_texto(frase, fonte_frase, 620)  # Divide frases longas para evitar que ultrapassem o quadro.
     for indice in range(len(linhas)):  # Percorre as linhas do ditado.
-        desenha_texto_centralizado(linhas[indice], fonte_normal, cor_texto, largura_janela // 2, 220 + indice * 34)  # Centraliza cada linha.
+        desenha_texto_centralizado(linhas[indice], fonte_frase, cor_texto, largura_janela // 2, 220 + indice * 28)  # Centraliza cada linha.
     desenha_texto('Sua resposta:', fonte_pequena, cor_texto, campo_resposta.x, 325)  # Identifica o campo de digitação.
     pygame.draw.rect(janela, cor_fundo, campo_resposta)  # Desenha o fundo do campo.
     pygame.draw.rect(janela, cor_texto, campo_resposta, 2)  # Contorna o campo que já começa ativo.
@@ -885,14 +897,44 @@ def desenha_resposta_digitada(atividade, agora):  # Recebe o desafio e o tempo p
     if atividade['resultado'] == '' and (agora // 500) % 2 == 0:  # Faz o cursor piscar enquanto a pessoa pode responder.
         esquerda_cursor = campo_resposta.x + 12 + fonte_normal.size(texto)[0]  # Coloca o cursor depois do último caractere.
         pygame.draw.line(janela, cor_texto, (esquerda_cursor, campo_resposta.y + 14), (esquerda_cursor, campo_resposta.y + 43), 2)  # Desenha o cursor.
-    desenha_texto_centralizado('Backspace: apagar  |  Enter: confirmar', fonte_pequena, cor_texto, largura_janela // 2, 450)  # Explica os controles.
-    desenha_texto_centralizado('Você pode tentar novamente enquanto houver tempo.', fonte_pequena, cor_texto, largura_janela // 2, 485)  # Explica as tentativas.
+    desenha_texto_centralizado('Backspace: Apagar  |  Enter: Confirmar', fonte_pequena, cor_texto, largura_janela // 2, 450)  # Explica os controles.
     objetivo = 'Complete com uma única palavra.'  # Define o objetivo dos ditados.
+    fonte_objetivo = fonte_normal  # Usa a fonte normal do objetivo por padrão.
     if atividade['tipo'] == 'enigma':  # Explica o objetivo da quinta atividade.
         objetivo = 'Descubra a resposta a partir das pistas.'  # Cada enigma possui uma resposta curta.
     elif atividade['tipo'] == 'calculo':  # Explica o formato numérico.
-        objetivo = 'Responda com um inteiro; use - para resultados negativos.'  # Permite o sinal de menos antes dos algarismos.
-    desenha_texto_centralizado(objetivo, fonte_normal, cor_texto, largura_janela // 2, 552)  # Reforça o objetivo do desafio.
+        objetivo = 'Responda com um número inteiro. Use "-" para resultados negativos.'  # Corrige a gramática da instrução.
+        fonte_objetivo = fonte_painel  # Reduz ainda mais a fonte apenas aqui para não colidir com o botão de desistir.
+    desenha_texto_centralizado(objetivo, fonte_objetivo, cor_texto, largura_janela // 2, 552)  # Reforça o objetivo do desafio.
+
+
+def interpola_cor(cor_inicial, cor_final, fracao):  # Mistura duas cores conforme a fração pedida, para formar o gradiente do anel.
+    return tuple(int(cor_inicial[canal] + (cor_final[canal] - cor_inicial[canal]) * fracao) for canal in range(3))  # Mistura cada canal RGB.
+
+
+def desenha_relogio(centro_x, centro_y, raio, segundos, limite_ms, cor):  # Desenha um cronômetro circular com anel de progresso, como o modelo enviado.
+    limite_segundos = max(1, limite_ms // 1000)  # Evita divisão por zero ao calcular a fração restante.
+    fracao = max(0, min(1, segundos / limite_segundos))  # Calcula a fração de tempo que ainda resta.
+    espessura = max(6, raio // 3)  # Define a grossura do anel proporcional ao tamanho do relógio.
+    raio_anel = raio - espessura // 2  # Centraliza o anel dentro do raio total.
+    pygame.draw.circle(janela, cor_branca, (centro_x, centro_y), raio)  # Preenche o fundo branco do relógio.
+    pygame.draw.circle(janela, cor_sombra, (centro_x, centro_y), raio_anel, espessura)  # Desenha a trilha cinza por trás do anel colorido.
+    angulo_decorrido = (1 - fracao) * 2 * math.pi  # Calcula quanto do círculo já foi consumido pelo tempo que passou.
+    angulo_total = 2 * math.pi - angulo_decorrido  # Calcula o quanto do anel colorido ainda deve aparecer.
+    segmentos = max(1, int(80 * fracao))  # Usa mais segmentos quanto maior o arco, para a curva ficar lisa.
+    for indice in range(segmentos):  # Desenha o anel em pequenos pedaços para permitir o gradiente de cor.
+        t0 = indice / segmentos  # Marca o início deste pedaço do anel.
+        t1 = (indice + 1) / segmentos  # Marca o fim deste pedaço do anel.
+        angulo0 = angulo_decorrido + t0 * angulo_total  # Converte o início em um ângulo a partir do topo.
+        angulo1 = angulo_decorrido + t1 * angulo_total  # Converte o fim em um ângulo a partir do topo.
+        cor_segmento = interpola_cor(cor_relogio_clara, cor_relogio_escura, t1)  # Clareia o início e escurece o fim do anel.
+        ponto0 = (centro_x + math.sin(angulo0) * raio_anel, centro_y - math.cos(angulo0) * raio_anel)  # Projeta o início do pedaço.
+        ponto1 = (centro_x + math.sin(angulo1) * raio_anel, centro_y - math.cos(angulo1) * raio_anel)  # Projeta o fim do pedaço.
+        pygame.draw.line(janela, cor_segmento, ponto0, ponto1, espessura)  # Desenha o pedaço do anel com a cor já misturada.
+    minutos = segundos // 60  # Separa os minutos para o formato do cronômetro.
+    segundos_exibidos = segundos % 60  # Separa os segundos restantes depois dos minutos completos.
+    texto_tempo = str(minutos) + ':' + str(segundos_exibidos).zfill(2)  # Monta o texto no formato minuto:segundo, como no modelo.
+    desenha_texto_centralizado(texto_tempo, fonte_relogio, cor, centro_x, centro_y - fonte_relogio.get_height() // 2)  # Mostra o tempo em negrito dentro do próprio círculo, ficando vermelho nos últimos segundos.
 
 
 def desenha_atividade(partida, agora):  # Recebe a partida e o tempo atual para desenhar o desafio.
@@ -911,8 +953,7 @@ def desenha_atividade(partida, agora):  # Recebe a partida e o tempo atual para 
     if atividade['tipo'] == 'blocos':  # Ajusta as instruções para a atividade de blocos.
         titulo = 'ORGANIZE OS BLOCOS'  # Prepara o título do novo desafio.
         instrucao = 'Clique na pilha de origem e depois na pilha de destino.'  # Explica os dois cliques.
-        regra = 'Mova só o topo. Até 2 blocos por pilha; misturar cores é permitido.'  # Explica os movimentos válidos.
-        desenha_texto_centralizado('Objetivo: ' + str(atividade['quantidade_cores']) + ' pilhas de uma única cor e uma vazia.', fonte_pequena, cor_texto, largura_janela // 2, 147)  # Explica a condição de vitória.
+        regra = ''  # Remove a frase de regras desta tela, a pedido.
     elif atividade['tipo'] == 'ditado':  # Ajusta o cabeçalho para o desafio de texto.
         titulo = 'COMPLETE O DITADO'  # Define o título do novo desafio.
         instrucao = 'Digite a palavra que falta e pressione Enter.'  # Explica a confirmação.
@@ -925,30 +966,28 @@ def desenha_atividade(partida, agora):  # Recebe a partida e o tempo atual para 
         titulo = 'CÁLCULO MATEMÁTICO'  # Identifica a quarta atividade.
         instrucao = 'Resolva a conta, digite o resultado e pressione Enter.'  # Explica o controle.
         regra = 'Divisões exatas. Multiplicações e divisões podem ter negativos.'  # Evita dúvidas sobre o formato.
-    desenha_texto('Nível ' + str(atividade['nivel']), fonte_pequena, cor_texto, 35, 65)  # Mostra a dificuldade atual.
+    desenha_texto('Nível ' + str(atividade['nivel']), fonte_painel, cor_texto, 35, 78)  # Mostra a dificuldade atual, mais afastada do nome e em fonte menor.
     desenha_texto_centralizado(titulo, fonte_titulo, cor_texto, largura_janela // 2, 25)  # Apresenta o desafio atual.
-    desenha_texto_centralizado('Tempo: ' + str(tempo) + ' s', fonte_normal, cor_cronometro, largura_janela - 125, 35)  # Mostra o cronômetro visível.
+    desenha_relogio(largura_janela - 80, 58, 38, tempo, atividade['limite'], cor_cronometro)  # Mostra o cronômetro circular mais à direita, afastado do título e do subtítulo.
     desenha_texto_centralizado(instrucao, fonte_normal, cor_texto, largura_janela // 2, 90)  # Explica o controle.
-    desenha_texto_centralizado(regra, fonte_pequena, cor_texto, largura_janela // 2, 123)  # Explica a condição de sucesso.
     pygame.draw.rect(janela, cor_branca, (largura_janela // 2 - 340, 170, 680, 365))  # Desenha a área principal da atividade.
-    pygame.draw.rect(janela, cor_sombra, (largura_janela // 2 - 340, 170, 680, 365), 2)  # Contorna a área do desafio.
+    pygame.draw.rect(janela, cor_preta, (largura_janela // 2 - 340, 170, 680, 365), 3)  # Contorna a área do desafio com borda preta, como no painel.
     if atividade['tipo'] == 'pontos':  # Escolhe os desenhos do desafio de pontos.
         desenha_pontos(atividade)  # Mostra círculos, conexões e contagem de pares.
     elif atividade['tipo'] == 'blocos':  # Escolhe os desenhos do desafio de blocos.
         desenha_pilhas(atividade)  # Mostra as pilhas e sua organização.
     elif atividade['tipo'] in ['ditado', 'calculo', 'enigma']:  # Escolhe a tela com campo de resposta.
         desenha_resposta_digitada(atividade, agora)  # Mostra o enunciado, a resposta e o cursor.
-    desenha_texto_centralizado(atividade['mensagem'], fonte_pequena, cor_texto, largura_janela // 2, 595)  # Mostra instruções, erros ou o resultado.
     if atividade['resultado'] == '':  # Mantém o botão de desistência somente durante o desafio.
         pygame.draw.rect(janela, cor_painel, botao_desistir)  # Desenha o fundo do botão.
         pygame.draw.rect(janela, cor_texto, botao_desistir, 2)  # Contorna o botão de desistência.
-        desenha_texto_centralizado('Desistir', fonte_pequena, cor_texto, botao_desistir.centerx, botao_desistir.y + 12)  # Identifica a ação.
+        desenha_texto_centralizado('Desistir', fonte_pequena, cor_texto, botao_desistir.centerx, botao_desistir.centery - fonte_pequena.get_height() // 2)  # Centraliza a palavra dentro do botão.
 
 
 def desenha_botao_sair():  # Desenha uma saída permanente em todas as telas.
     pygame.draw.rect(janela, cor_sair, botao_sair)  # Cria o bloco vermelho afastado das margens.
     pygame.draw.rect(janela, cor_texto, botao_sair, 2)  # Contorna o bloco para destacá-lo.
-    desenha_texto_centralizado('Sair', fonte_pequena, cor_branca, botao_sair.centerx, botao_sair.y + 10)  # Mostra o comando de saída.
+    desenha_texto_centralizado('Sair', fonte_pequena, cor_branca, botao_sair.centerx, botao_sair.centery - fonte_pequena.get_height() // 2)  # Centraliza o comando de saída dentro do botão.
 
 
 # ----- Define os quadros da animação do personagem
@@ -1031,7 +1070,7 @@ retangulo_dado = pygame.Rect(810, 495, 120, 120)  # Define a área do dado.
 botao_um_jogador = pygame.Rect(largura_janela // 2 - 150, 280, 300, 65)  # Centraliza a primeira opção do menu.
 botao_dois_jogadores = pygame.Rect(largura_janela // 2 - 150, 370, 300, 65)  # Centraliza a segunda opção do menu.
 botao_confirmar = pygame.Rect(largura_janela // 2 - 100, 365, 200, 55)  # Centraliza o botão das caixas de aviso.
-botao_sair = pygame.Rect(20, janela.get_height() - 52, 120, 36)  # Posiciona a saída a vinte pixels da esquerda e dezesseis do fundo.
+botao_sair = pygame.Rect(20, janela.get_height() - 40, 80, 26)  # Posiciona a saída a vinte pixels da esquerda e dezesseis do fundo, em tamanho reduzido.
 botao_desistir = pygame.Rect(largura_janela - 150, 550, 120, 42)  # Permite abandonar apenas a atividade atual.
 raio_ponto = 24  # Define o tamanho visual e a área clicável de cada ponto.
 intervalo_passo = 600  # Reserva seis décimos de segundo para preparar, executar e terminar cada salto.
@@ -1148,7 +1187,7 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
         # ----- Gera saídas
         if jogo_ativo:  # Desenha somente enquanto a janela deve permanecer aberta.
             if estado == 'menu':  # Verifica se a escolha de participantes deve aparecer.
-                janela.fill(cor_fundo)  # Mantém o fundo claro na tela inicial.
+                janela.fill(cor_fundo_cinza)  # Usa o fundo cinza na tela inicial.
                 desenha_menu()  # Mostra os botões do menu.
             elif estado == 'aviso_atividade':  # Exibe somente o aviso, sem revelar a resposta ou a pergunta.
                 janela.fill(cor_fundo_cinza)  # Usa o fundo cinza na tela de desafio.
@@ -1165,7 +1204,7 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
             else:  # Desenha o tabuleiro nos demais estados.
                 janela.fill(cor_fundo_cinza)  # Usa o fundo cinza na tela do tabuleiro.
                 desenha_texto('TRILHA DOS DESAFIOS', fonte_titulo, cor_texto, 35, 25)  # Mostra o título do tabuleiro.
-                desenha_texto('Dado: 1 a 4 | Dificuldade por casa | Cálculos: 20 s', fonte_pequena, cor_texto, 37, 73)  # Identifica a versão.
+                desenha_texto('Avance pelo tabuleiro e supere cada desafio!', fonte_subtitulo, cor_texto, 37, 73)  # Mostra o subtítulo divertido, alinhado ao título.
                 desenha_tabuleiro(partida)  # Mostra casas comuns e efeitos já revelados.
                 desenha_pecas(partida, estado, agora)  # Mostra as peças nas posições atuais.
                 desenha_painel(partida, estado, agora)  # Mostra o participante da vez e as instruções.
