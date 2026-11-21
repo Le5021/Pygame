@@ -22,8 +22,6 @@ cor_texto = (30, 42, 52)  # Define a cor escura dos textos e contornos.
 cor_sair = (190, 35, 50)  # Define o vermelho do botão de saída e dos avisos de tempo.
 cor_branca = (255, 255, 255)  # Define o branco do dado e dos olhos.
 cor_preta = (0, 0, 0)  # Define o preto das bolinhas do dado.
-cor_relogio_clara = (255, 222, 173)  # Define o tom mais claro do gradiente do cronômetro circular.
-cor_relogio_escura = (230, 126, 34)  # Define o tom mais escuro do gradiente do cronômetro circular.
 cor_sombra = (207, 199, 178)  # Define a sombra das casas.
 cor_perde_vez = (240, 120, 130)  # Marca uma casa revelada que encerra o turno.
 cor_avanca = (100, 205, 130)  # Marca uma casa revelada que faz avançar.
@@ -33,19 +31,31 @@ cor_jogador_1 = (100, 50, 185)  # Define o roxo da primeira peça.
 cor_jogador_2 = (220, 55, 85)  # Define o vermelho da segunda peça.
 cores_casas = [(255, 204, 62), (174, 205, 64), (40, 185, 186)]  # Alterna três cores.
 try:  # Tenta usar a fonte Poppins escolhida para o jogo.
-    fonte_titulo = pygame.font.Font('assets/fontes/Poppins-Bold.ttf', 44)  # Cria a fonte dos títulos.
+    fonte_titulo = pygame.font.Font('assets/fontes/Poppins-Bold.ttf', 52)  # Cria a fonte dos títulos, maior e mais chamativa.
+    fonte_titulo_jogo = pygame.font.Font('assets/fontes/Poppins-Bold.ttf', 56)  # Cria a fonte própria, maior, do título de cada desafio.
     fonte_normal = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 26)  # Cria a fonte dos textos.
+    fonte_instrucao = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 22)  # Cria a fonte, um pouco menor, da instrução de cada desafio.
     fonte_pequena = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 20)  # Cria a fonte das legendas.
-    fonte_subtitulo = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 16)  # Cria a fonte menor do subtítulo do tabuleiro.
+    fonte_frase = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 24)  # Cria a fonte maior da frase do ditado e do enigma.
+    fonte_subtitulo = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 20)  # Cria a fonte maior do subtítulo do tabuleiro.
     fonte_painel = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 16)  # Cria a fonte menor das legendas próximas ao dado.
-    fonte_relogio = pygame.font.Font('assets/fontes/Poppins-Bold.ttf', 18)  # Cria a fonte em negrito do cronômetro circular, já no tamanho que cabe dentro do anel.
+    fonte_relogio = pygame.font.Font('assets/fontes/Poppins-Bold.ttf', 28)  # Cria a fonte em negrito do cronômetro, maior, pois o círculo cresceu.
+    fonte_jogador = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 30)  # Cria a fonte maior do nome do jogador na tela de desafio.
+    fonte_nivel = pygame.font.Font('assets/fontes/Poppins-Medium.ttf', 20)  # Cria a fonte maior do nível na tela de desafio.
+    fonte_caixa_titulo = pygame.font.Font('assets/fontes/Poppins-Bold.ttf', 38)  # Cria uma fonte própria para o título da caixa de aviso, que é mais estreita.
 except FileNotFoundError:  # Evita travar o jogo caso os arquivos de fonte não estejam na pasta assets.
-    fonte_titulo = pygame.font.Font(None, 44)  # Usa a fonte padrão do pygame para títulos.
+    fonte_titulo = pygame.font.Font(None, 52)  # Usa a fonte padrão do pygame para títulos.
+    fonte_titulo_jogo = pygame.font.Font(None, 58)  # Usa a fonte padrão do pygame para o título de cada desafio.
     fonte_normal = pygame.font.Font(None, 28)  # Usa a fonte padrão do pygame para textos.
+    fonte_instrucao = pygame.font.Font(None, 24)  # Usa a fonte padrão do pygame para a instrução de cada desafio.
     fonte_pequena = pygame.font.Font(None, 22)  # Usa a fonte padrão do pygame para legendas.
-    fonte_subtitulo = pygame.font.Font(None, 18)  # Usa a fonte padrão do pygame para o subtítulo.
+    fonte_frase = pygame.font.Font(None, 26)  # Usa a fonte padrão do pygame para a frase do ditado e do enigma.
+    fonte_subtitulo = pygame.font.Font(None, 22)  # Usa a fonte padrão do pygame para o subtítulo.
     fonte_painel = pygame.font.Font(None, 18)  # Usa a fonte padrão do pygame para as legendas próximas ao dado.
-    fonte_relogio = pygame.font.Font(None, 20)  # Usa a fonte padrão do pygame para o cronômetro circular, já no tamanho que cabe dentro do anel.
+    fonte_jogador = pygame.font.Font(None, 32)  # Usa a fonte padrão do pygame para o nome do jogador.
+    fonte_nivel = pygame.font.Font(None, 22)  # Usa a fonte padrão do pygame para o nível.
+    fonte_caixa_titulo = pygame.font.Font(None, 40)  # Usa a fonte padrão do pygame para o título da caixa de aviso.
+    fonte_relogio = pygame.font.Font(None, 30)  # Usa a fonte padrão do pygame para o cronômetro, maior, pois o círculo cresceu.
 
 # ----- Define funções de preparação
 def cria_casas():  # Devolve os retângulos das casas na ordem do percurso.
@@ -162,14 +172,14 @@ def atualiza_movimento(partida, agora):  # Recebe a partida e o tempo atual; dev
 
 def texto_efeito(efeito):  # Recebe os dados de uma casa especial e devolve seu aviso.
     if efeito['tipo'] == 'perde_vez':  # Identifica a casa que encerra o turno.
-        return 'Poxa! Você perdeu sua vez :('  # Entrega a mensagem solicitada.
+        return 'Poxa! Você perdeu sua vez!'  # Entrega a mensagem solicitada.
     palavra_casas = 'casas'  # Prepara o plural para dois ou três passos.
     if efeito['passos'] == 1:  # Verifica se haverá apenas um passo.
         palavra_casas = 'casa'  # Ajusta a mensagem para o singular.
     quantidade = str(efeito['passos']) + ' ' + palavra_casas  # Monta a quantidade por escrito.
     if efeito['tipo'] == 'avanca':  # Identifica a casa que faz avançar.
-        return 'Parabéns! Você avançará ' + quantidade + ' XD'  # Entrega o aviso de avanço.
-    return 'Ihh, você recuará ' + quantidade + ' :/'  # Entrega o aviso de recuo.
+        return 'Parabéns! Você avançará ' + quantidade + '!'  # Entrega o aviso de avanço.
+    return 'Ihh, você recuará ' + quantidade + '! '  # Entrega o aviso de recuo.
 
 
 def prepara_resultado(partida, mensagem, agora):  # Recebe a partida, uma mensagem e o instante atual.
@@ -810,12 +820,13 @@ def desenha_caixa(titulo, mensagem, texto_botao):  # Recebe os textos do aviso o
     pygame.draw.rect(janela, cor_sombra, (largura_janela // 2 - 332, 213, 680, 250))  # Desenha a sombra da caixa centralizada.
     pygame.draw.rect(janela, cor_branca, (largura_janela // 2 - 340, 205, 680, 250))  # Desenha a caixa sobre o tabuleiro.
     pygame.draw.rect(janela, cor_texto, (largura_janela // 2 - 340, 205, 680, 250), 3)  # Desenha o contorno da caixa.
-    desenha_texto_centralizado(titulo, fonte_titulo, cor_texto, largura_janela // 2, 235)  # Centraliza o título.
+    desenha_texto_centralizado(titulo, fonte_caixa_titulo, cor_texto, largura_janela // 2, 235)  # Centraliza o título, em fonte própria para caber na caixa mais estreita.
     desenha_texto_centralizado(mensagem, fonte_normal, cor_texto, largura_janela // 2, 300)  # Centraliza o aviso.
     pygame.draw.rect(janela, cores_casas[1], botao_confirmar)  # Desenha o botão de confirmação.
     pygame.draw.rect(janela, cor_texto, botao_confirmar, 2)  # Contorna o botão.
     desenha_texto_centralizado(texto_botao, fonte_normal, cor_texto, botao_confirmar.centerx, 382)  # Mostra o texto do botão.
-    desenha_texto_centralizado('Clique no botão ou pressione Enter.', fonte_pequena, cor_texto, largura_janela // 2, 430)  # Explica os dois controles.
+    if texto_botao != 'Começar':  # Remove a explicação redundante apenas nas telas de preparação do desafio.
+        desenha_texto_centralizado('Clique no botão ou pressione Enter.', fonte_pequena, cor_texto, largura_janela // 2, 430)  # Explica os dois controles.
 
 
 
@@ -885,10 +896,10 @@ def desenha_resposta_digitada(atividade, agora):  # Recebe o desafio e o tempo p
             frase = 'Resposta: ' + atividade['respostas'][0]  # Mostra a resposta por extenso.
         else:  # Completa a palavra do ditado.
             frase = frase.replace('______', atividade['respostas'][0])  # Mostra o ditado completo depois do acerto.
-    fonte_frase = fonte_pequena if atividade['tipo'] in ('ditado', 'enigma') else fonte_normal  # Reduz a fonte da frase do ditado e do enigma para não ultrapassar a caixa.
-    linhas = quebra_texto(frase, fonte_frase, 620)  # Divide frases longas para evitar que ultrapassem o quadro.
+    fonte_da_frase = fonte_frase if atividade['tipo'] in ('ditado', 'enigma') else fonte_normal  # Usa a fonte maior própria do ditado e do enigma.
+    linhas = quebra_texto(frase, fonte_da_frase, 620)  # Divide frases longas para evitar que ultrapassem o quadro.
     for indice in range(len(linhas)):  # Percorre as linhas do ditado.
-        desenha_texto_centralizado(linhas[indice], fonte_frase, cor_texto, largura_janela // 2, 220 + indice * 28)  # Centraliza cada linha.
+        desenha_texto_centralizado(linhas[indice], fonte_da_frase, cor_texto, largura_janela // 2, 220 + indice * 28)  # Centraliza cada linha.
     desenha_texto('Sua resposta:', fonte_pequena, cor_texto, campo_resposta.x, 325)  # Identifica o campo de digitação.
     pygame.draw.rect(janela, cor_fundo, campo_resposta)  # Desenha o fundo do campo.
     pygame.draw.rect(janela, cor_texto, campo_resposta, 2)  # Contorna o campo que já começa ativo.
@@ -908,33 +919,13 @@ def desenha_resposta_digitada(atividade, agora):  # Recebe o desafio e o tempo p
     desenha_texto_centralizado(objetivo, fonte_objetivo, cor_texto, largura_janela // 2, 552)  # Reforça o objetivo do desafio.
 
 
-def interpola_cor(cor_inicial, cor_final, fracao):  # Mistura duas cores conforme a fração pedida, para formar o gradiente do anel.
-    return tuple(int(cor_inicial[canal] + (cor_final[canal] - cor_inicial[canal]) * fracao) for canal in range(3))  # Mistura cada canal RGB.
-
-
-def desenha_relogio(centro_x, centro_y, raio, segundos, limite_ms, cor):  # Desenha um cronômetro circular com anel de progresso, como o modelo enviado.
-    limite_segundos = max(1, limite_ms // 1000)  # Evita divisão por zero ao calcular a fração restante.
-    fracao = max(0, min(1, segundos / limite_segundos))  # Calcula a fração de tempo que ainda resta.
-    espessura = max(6, raio // 3)  # Define a grossura do anel proporcional ao tamanho do relógio.
-    raio_anel = raio - espessura // 2  # Centraliza o anel dentro do raio total.
+def desenha_relogio(centro_x, centro_y, raio, segundos, limite_ms, cor):  # Desenha um cronômetro circular simples, só com o círculo e o tempo centralizado.
     pygame.draw.circle(janela, cor_branca, (centro_x, centro_y), raio)  # Preenche o fundo branco do relógio.
-    pygame.draw.circle(janela, cor_sombra, (centro_x, centro_y), raio_anel, espessura)  # Desenha a trilha cinza por trás do anel colorido.
-    angulo_decorrido = (1 - fracao) * 2 * math.pi  # Calcula quanto do círculo já foi consumido pelo tempo que passou.
-    angulo_total = 2 * math.pi - angulo_decorrido  # Calcula o quanto do anel colorido ainda deve aparecer.
-    segmentos = max(1, int(80 * fracao))  # Usa mais segmentos quanto maior o arco, para a curva ficar lisa.
-    for indice in range(segmentos):  # Desenha o anel em pequenos pedaços para permitir o gradiente de cor.
-        t0 = indice / segmentos  # Marca o início deste pedaço do anel.
-        t1 = (indice + 1) / segmentos  # Marca o fim deste pedaço do anel.
-        angulo0 = angulo_decorrido + t0 * angulo_total  # Converte o início em um ângulo a partir do topo.
-        angulo1 = angulo_decorrido + t1 * angulo_total  # Converte o fim em um ângulo a partir do topo.
-        cor_segmento = interpola_cor(cor_relogio_clara, cor_relogio_escura, t1)  # Clareia o início e escurece o fim do anel.
-        ponto0 = (centro_x + math.sin(angulo0) * raio_anel, centro_y - math.cos(angulo0) * raio_anel)  # Projeta o início do pedaço.
-        ponto1 = (centro_x + math.sin(angulo1) * raio_anel, centro_y - math.cos(angulo1) * raio_anel)  # Projeta o fim do pedaço.
-        pygame.draw.line(janela, cor_segmento, ponto0, ponto1, espessura)  # Desenha o pedaço do anel com a cor já misturada.
+    pygame.draw.circle(janela, cor_texto, (centro_x, centro_y), raio, 3)  # Contorna o círculo com uma borda simples, sem anel colorido.
     minutos = segundos // 60  # Separa os minutos para o formato do cronômetro.
     segundos_exibidos = segundos % 60  # Separa os segundos restantes depois dos minutos completos.
-    texto_tempo = str(minutos) + ':' + str(segundos_exibidos).zfill(2)  # Monta o texto no formato minuto:segundo, como no modelo.
-    desenha_texto_centralizado(texto_tempo, fonte_relogio, cor, centro_x, centro_y - fonte_relogio.get_height() // 2)  # Mostra o tempo em negrito dentro do próprio círculo, ficando vermelho nos últimos segundos.
+    texto_tempo = str(minutos) + ':' + str(segundos_exibidos).zfill(2)  # Monta o texto no formato minuto:segundo.
+    desenha_texto_centralizado(texto_tempo, fonte_relogio, cor, centro_x, centro_y - fonte_relogio.get_height() // 2)  # Mostra o tempo em negrito, centralizado dentro do círculo.
 
 
 def desenha_atividade(partida, agora):  # Recebe a partida e o tempo atual para desenhar o desafio.
@@ -946,7 +937,7 @@ def desenha_atividade(partida, agora):  # Recebe a partida e o tempo atual para 
     cor_cronometro = cor_texto  # Define a cor normal do cronômetro.
     if tempo <= 5:  # Destaca os últimos cinco segundos.
         cor_cronometro = cor_sair  # Muda o cronômetro para vermelho.
-    desenha_texto(jogador['nome'], fonte_normal, jogador['cor'], 35, 35)  # Mostra o participante da vez.
+    desenha_texto(jogador['nome'], fonte_jogador, jogador['cor'], 35, 35)  # Mostra o participante da vez, em fonte maior.
     titulo = 'CONECTE AS CORES'  # Prepara o título da atividade de pontos.
     instrucao = 'Clique em dois pontos da mesma cor para conectá-los.'  # Explica os cliques nos pontos.
     regra = 'Complete todos os pares. As linhas podem se cruzar.'  # Explica a vitória nos pontos.
@@ -966,10 +957,10 @@ def desenha_atividade(partida, agora):  # Recebe a partida e o tempo atual para 
         titulo = 'CÁLCULO MATEMÁTICO'  # Identifica a quarta atividade.
         instrucao = 'Resolva a conta, digite o resultado e pressione Enter.'  # Explica o controle.
         regra = 'Divisões exatas. Multiplicações e divisões podem ter negativos.'  # Evita dúvidas sobre o formato.
-    desenha_texto('Nível ' + str(atividade['nivel']), fonte_painel, cor_texto, 35, 78)  # Mostra a dificuldade atual, mais afastada do nome e em fonte menor.
-    desenha_texto_centralizado(titulo, fonte_titulo, cor_texto, largura_janela // 2, 25)  # Apresenta o desafio atual.
-    desenha_relogio(largura_janela - 80, 58, 38, tempo, atividade['limite'], cor_cronometro)  # Mostra o cronômetro circular mais à direita, afastado do título e do subtítulo.
-    desenha_texto_centralizado(instrucao, fonte_normal, cor_texto, largura_janela // 2, 90)  # Explica o controle.
+    desenha_texto('Nível ' + str(atividade['nivel']), fonte_nivel, cor_texto, 35, 82)  # Mostra a dificuldade atual, mais afastada do nome e em fonte maior.
+    desenha_texto_centralizado(titulo, fonte_titulo_jogo, cor_texto, largura_janela // 2, 35)  # Apresenta o desafio atual, mais grande e um pouco mais para baixo.
+    desenha_relogio(largura_janela - 82, 65, 52, tempo, atividade['limite'], cor_cronometro)  # Mostra o cronômetro circular bem maior, mais à direita.
+    desenha_texto_centralizado(instrucao, fonte_instrucao, cor_texto, largura_janela // 2, 128)  # Explica o controle, numa fonte um pouco menor, próxima da caixa do jogo.
     pygame.draw.rect(janela, cor_branca, (largura_janela // 2 - 340, 170, 680, 365))  # Desenha a área principal da atividade.
     pygame.draw.rect(janela, cor_preta, (largura_janela // 2 - 340, 170, 680, 365), 3)  # Contorna a área do desafio com borda preta, como no painel.
     if atividade['tipo'] == 'pontos':  # Escolhe os desenhos do desafio de pontos.
@@ -1204,7 +1195,7 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
             else:  # Desenha o tabuleiro nos demais estados.
                 janela.fill(cor_fundo_cinza)  # Usa o fundo cinza na tela do tabuleiro.
                 desenha_texto('TRILHA DOS DESAFIOS', fonte_titulo, cor_texto, 35, 25)  # Mostra o título do tabuleiro.
-                desenha_texto('Avance pelo tabuleiro e supere cada desafio!', fonte_subtitulo, cor_texto, 37, 73)  # Mostra o subtítulo divertido, alinhado ao título.
+                desenha_texto('Avance pelo tabuleiro e supere cada desafio!', fonte_subtitulo, cor_texto, 37, 85)  # Mostra o subtítulo divertido, alinhado ao título, agora maior.
                 desenha_tabuleiro(partida)  # Mostra casas comuns e efeitos já revelados.
                 desenha_pecas(partida, estado, agora)  # Mostra as peças nas posições atuais.
                 desenha_painel(partida, estado, agora)  # Mostra o participante da vez e as instruções.
