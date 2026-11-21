@@ -2,18 +2,9 @@
 # ----- Importa e inicia pacotes
 import pygame  # Fornece janela, eventos, textos e desenhos.
 import random  # Permite sortear o valor do dado.
-import os  # Permite montar caminhos de arquivos (imagens, músicas) que funcionam em qualquer computador.
 
 pygame.init()  # Inicia os recursos do pygame.
 pygame.key.stop_text_input()  # Mantém a digitação desativada até começar uma atividade de texto.
-
-# ----- Música de fundo (A IMPLEMENTAR)
-# A ideia combinada: uma única trilha, em loop, tocando tanto na tela inicial quanto no tabuleiro.
-# Por isso ela só precisa ser carregada e iniciada UMA vez, aqui no começo do programa.
-# Quando a faixa for escolhida, descomente e ajuste as linhas abaixo (o arquivo deve ficar em assets/musica_fundo.mp3):
-# pygame.mixer.music.load(os.path.join(pasta_assets, 'musica_fundo.mp3'))  # Carrega o arquivo de música.
-# pygame.mixer.music.set_volume(0.5)  # Define o volume entre 0.0 (mudo) e 1.0 (máximo).
-# pygame.mixer.music.play(-1)  # Toca em loop infinito; continua tocando ao trocar de 'menu' para 'tabuleiro'.
 
 # ----- Gera tela principal
 largura_janela = 1000  # Define a largura da janela em pixels.
@@ -25,6 +16,7 @@ pygame.display.set_caption('Trilha dos desafios - Etapa 4E - cinco desafios')  #
 
 # ----- Define cores e fontes
 cor_fundo = (245, 242, 230)  # Define o fundo claro.
+cor_fundo_cinza = (180, 180, 180)  # Define o fundo cinza do tabuleiro e das telas de desafio.
 cor_texto = (30, 42, 52)  # Define a cor escura dos textos e contornos.
 cor_sair = (190, 35, 50)  # Define o vermelho do botão de saída e dos avisos de tempo.
 cor_branca = (255, 255, 255)  # Define o branco do dado e dos olhos.
@@ -34,25 +26,12 @@ cor_perde_vez = (240, 120, 130)  # Marca uma casa revelada que encerra o turno.
 cor_avanca = (100, 205, 130)  # Marca uma casa revelada que faz avançar.
 cor_recua = (245, 165, 80)  # Marca uma casa revelada que faz recuar.
 cor_painel = (229, 233, 224)  # Define o fundo do painel lateral.
-cor_jogador_1 = (211, 68, 34)  # Define o vermelho do giz do Jogador 1 (combina com o giz vermelho da nova tela inicial).
-cor_jogador_2 = (52, 140, 163)  # Define o azul do giz do Jogador 2 (combina com o giz azul da nova tela inicial).
+cor_jogador_1 = (100, 50, 185)  # Define o roxo da primeira peça.
+cor_jogador_2 = (220, 55, 85)  # Define o vermelho da segunda peça.
 cores_casas = [(255, 204, 62), (174, 205, 64), (40, 185, 186)]  # Alterna três cores.
 fonte_titulo = pygame.font.Font(None, 44)  # Cria a fonte padrão para títulos.
 fonte_normal = pygame.font.Font(None, 28)  # Cria a fonte padrão para textos.
 fonte_pequena = pygame.font.Font(None, 22)  # Cria a fonte padrão para legendas.
-
-# ----- Carrega imagens
-# As imagens ficam em uma pasta "assets" ao lado deste arquivo, para funcionar em qualquer computador
-# (inclusive quando o jogo é baixado do GitHub por outra pessoa).
-pasta_jogo = os.path.dirname(os.path.abspath(__file__))  # Descobre a pasta onde este arquivo está salvo.
-pasta_assets = os.path.join(pasta_jogo, 'assets')  # Monta o caminho da pasta de imagens e músicas.
-caminho_fundo_menu = os.path.join(pasta_assets, 'fundo_inicial.png')  # Monta o caminho da imagem da tela inicial.
-try:  # Tenta carregar a nova tela inicial ilustrada.
-    imagem_fundo_menu = pygame.image.load(caminho_fundo_menu).convert()  # Carrega a imagem do disco.
-    imagem_fundo_menu = pygame.transform.smoothscale(imagem_fundo_menu, (largura_janela, altura_janela))  # Ajusta ao tamanho da janela.
-except (pygame.error, FileNotFoundError):  # Caso o arquivo ainda não exista na pasta assets.
-    imagem_fundo_menu = None  # Sinaliza que a tela inicial deve usar o desenho antigo como alternativa.
-    print('Aviso: não encontrei assets/fundo_inicial.png — a tela inicial usará o desenho antigo.')  # Avisa no console.
 
 # ----- Define funções de preparação
 def cria_casas():  # Devolve os retângulos das casas na ordem do percurso.
@@ -610,21 +589,15 @@ def desenha_texto_centralizado(texto, fonte, cor, centro_horizontal, topo):  # R
 
 
 def desenha_menu():  # Mostra as opções de quantidade de jogadores.
-    if imagem_fundo_menu is not None:  # Verifica se a nova ilustração foi carregada com sucesso.
-        janela.blit(imagem_fundo_menu, (0, 0))  # Cobre toda a janela com a tela inicial ilustrada (asfalto, gizes e amarelinha).
-        # Os botões "1 Jogador" e "2 Jogadores" já aparecem desenhados na própria imagem;
-        # botao_um_jogador e botao_dois_jogadores (mais abaixo) só marcam as áreas clicáveis sobre elas.
-        # O botão "Sair" também já vem desenhado na imagem (ver o ajuste no loop principal).
-    else:  # Alternativa caso a imagem não seja encontrada na pasta assets.
-        desenha_texto_centralizado('TRILHA DOS DESAFIOS', fonte_titulo, cor_texto, largura_janela // 2, 160)  # Centraliza o título na janela.
-        desenha_texto_centralizado('Escolha quantas pessoas vão jogar:', fonte_normal, cor_texto, largura_janela // 2, 230)  # Centraliza a instrução na janela.
-        pygame.draw.rect(janela, cores_casas[1], botao_um_jogador)  # Desenha a primeira opção.
-        pygame.draw.rect(janela, cores_casas[2], botao_dois_jogadores)  # Desenha a segunda opção.
-        pygame.draw.rect(janela, cor_texto, botao_um_jogador, 2)  # Contorna o primeiro botão.
-        pygame.draw.rect(janela, cor_texto, botao_dois_jogadores, 2)  # Contorna o segundo botão.
-        desenha_texto_centralizado('1 jogador', fonte_normal, cor_texto, botao_um_jogador.centerx, botao_um_jogador.centery - 12)  # Centraliza o nome no primeiro botão.
-        desenha_texto_centralizado('2 jogadores', fonte_normal, cor_texto, botao_dois_jogadores.centerx, botao_dois_jogadores.centery - 12)  # Centraliza o nome no segundo botão.
-        desenha_texto_centralizado('Etapa 4E: pontos, blocos, ditados, cálculos e enigmas.', fonte_pequena, cor_texto, largura_janela // 2, 490)  # Explica esta versão.
+    desenha_texto_centralizado('TRILHA DOS DESAFIOS', fonte_titulo, cor_texto, largura_janela // 2, 160)  # Centraliza o título na janela.
+    desenha_texto_centralizado('Escolha quantas pessoas vão jogar:', fonte_normal, cor_texto, largura_janela // 2, 230)  # Centraliza a instrução na janela.
+    pygame.draw.rect(janela, cores_casas[1], botao_um_jogador)  # Desenha a primeira opção.
+    pygame.draw.rect(janela, cores_casas[2], botao_dois_jogadores)  # Desenha a segunda opção.
+    pygame.draw.rect(janela, cor_texto, botao_um_jogador, 2)  # Contorna o primeiro botão.
+    pygame.draw.rect(janela, cor_texto, botao_dois_jogadores, 2)  # Contorna o segundo botão.
+    desenha_texto_centralizado('1 jogador', fonte_normal, cor_texto, botao_um_jogador.centerx, 303)  # Centraliza o nome no primeiro botão.
+    desenha_texto_centralizado('2 jogadores', fonte_normal, cor_texto, botao_dois_jogadores.centerx, 393)  # Centraliza o nome no segundo botão.
+    desenha_texto_centralizado('Etapa 4E: pontos, blocos, ditados, cálculos e enigmas.', fonte_pequena, cor_texto, largura_janela // 2, 490)  # Explica esta versão.
 
 
 def desenha_tabuleiro(partida):  # Recebe a partida e desenha as casas com os efeitos já revelados.
@@ -1055,11 +1028,8 @@ limite_caracteres = 24  # Limita a resposta para manter o texto dentro do campo.
 capacidade_pilha = 2  # Limita cada pilha a dois blocos.
 partida = {}  # Aguarda a escolha do modo para receber os dados da partida.
 retangulo_dado = pygame.Rect(810, 495, 120, 120)  # Define a área do dado.
-# Os dois botões abaixo usam frações da largura/altura da janela (em vez de pixels fixos) porque agora
-# precisam coincidir com os botões já desenhados dentro da imagem de fundo (fundo_inicial.png),
-# e essa imagem é esticada para preencher a janela inteira, qualquer que seja a resolução da tela.
-botao_um_jogador = pygame.Rect(int(0.218 * largura_janela), int(0.784 * altura_janela), int(0.271 * largura_janela), int(0.125 * altura_janela))  # Área clicável sobre o botão "1 Jogador" da imagem.
-botao_dois_jogadores = pygame.Rect(int(0.508 * largura_janela), int(0.784 * altura_janela), int(0.266 * largura_janela), int(0.125 * altura_janela))  # Área clicável sobre o botão "2 Jogadores" da imagem.
+botao_um_jogador = pygame.Rect(largura_janela // 2 - 150, 280, 300, 65)  # Centraliza a primeira opção do menu.
+botao_dois_jogadores = pygame.Rect(largura_janela // 2 - 150, 370, 300, 65)  # Centraliza a segunda opção do menu.
 botao_confirmar = pygame.Rect(largura_janela // 2 - 100, 365, 200, 55)  # Centraliza o botão das caixas de aviso.
 botao_sair = pygame.Rect(20, janela.get_height() - 52, 120, 36)  # Posiciona a saída a vinte pixels da esquerda e dezesseis do fundo.
 botao_desistir = pygame.Rect(largura_janela - 150, 550, 120, 42)  # Permite abandonar apenas a atividade atual.
@@ -1177,10 +1147,11 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
 
         # ----- Gera saídas
         if jogo_ativo:  # Desenha somente enquanto a janela deve permanecer aberta.
-            janela.fill(cor_fundo)  # Limpa os desenhos do frame anterior.
             if estado == 'menu':  # Verifica se a escolha de participantes deve aparecer.
+                janela.fill(cor_fundo)  # Mantém o fundo claro na tela inicial.
                 desenha_menu()  # Mostra os botões do menu.
             elif estado == 'aviso_atividade':  # Exibe somente o aviso, sem revelar a resposta ou a pergunta.
+                janela.fill(cor_fundo_cinza)  # Usa o fundo cinza na tela de desafio.
                 tempo_aviso = partida['atividade']['limite'] // 1000  # Consulta o prazo real desta faixa.
                 mensagem_aviso = 'Você possui apenas ' + str(tempo_aviso) + ' segundos para concluir o desafio.'  # Dá destaque ao prazo.
                 titulo_aviso = 'PREPARE-SE PARA O DITADO'  # Identifica o desafio que será iniciado.
@@ -1189,8 +1160,10 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
                 desenha_caixa(titulo_aviso, mensagem_aviso, 'Começar')  # Aguarda uma ação voluntária.
                 desenha_texto_centralizado('O tempo começa ao clicar em Começar ou pressionar Enter.', fonte_pequena, cor_texto, largura_janela // 2, 475)  # Explica quando começa a contagem.
             elif estado == 'atividade' or estado == 'resultado_atividade':  # Verifica se a atividade ou seu resultado deve aparecer.
+                janela.fill(cor_fundo_cinza)  # Usa o fundo cinza na tela de desafio.
                 desenha_atividade(partida, agora)  # Desenha a atividade atual e seu cronômetro.
             else:  # Desenha o tabuleiro nos demais estados.
+                janela.fill(cor_fundo_cinza)  # Usa o fundo cinza na tela do tabuleiro.
                 desenha_texto('TRILHA DOS DESAFIOS', fonte_titulo, cor_texto, 35, 25)  # Mostra o título do tabuleiro.
                 desenha_texto('Dado: 1 a 4 | Dificuldade por casa | Cálculos: 20 s', fonte_pequena, cor_texto, 37, 73)  # Identifica a versão.
                 desenha_tabuleiro(partida)  # Mostra casas comuns e efeitos já revelados.
@@ -1200,14 +1173,9 @@ while jogo_ativo:  # Mantém eventos, lógica e saídas em um único loop.
                     desenha_caixa('CASA ESPECIAL', partida['mensagem_aviso'], 'Continuar')  # Sobrepõe o aviso.
                 elif estado == 'fim':  # Verifica se alguém alcançou a última casa.
                     desenha_caixa('CHEGADA!', partida['vencedor'] + ' venceu!', 'Jogar novamente')  # Mostra a vitória e permite começar outra partida.
-            # O botão "Sair" padrão só é redesenhado fora do menu: a imagem da tela inicial (fundo_inicial.png)
-            # já traz seu próprio botão "Sair" ilustrado, então evitamos desenhar o retângulo vermelho por cima dele.
-            # A área clicável (botao_sair) continua ativa em todas as telas, inclusive no menu.
-            if not (estado == 'menu' and imagem_fundo_menu is not None):  # Evita duplicar o botão "Sair" sobre a nova imagem do menu.
-                desenha_botao_sair()  # Mantém a saída visível por cima de qualquer tela ou caixa (fora do menu ilustrado).
+            desenha_botao_sair()  # Mantém a saída visível por cima de qualquer tela ou caixa.
             pygame.display.update()  # Apresenta o frame completo na janela.
             relogio.tick(60)  # Limita o loop a sessenta atualizações por segundo.
 
 # ===== Finalização =====
-pygame.quit()  # Libera os recursos do pygame e fecha a janela. 
- 
+pygame.quit()  # Libera os recursos do pygame e fecha a janela.
