@@ -13,8 +13,9 @@
 
 -> Plugins de IA generativa (IAg): O código em python que compõe o jogo "Trilha dos Desafios" foi 100% gerado por IA generativa (IAg). Dessa forma, uma vez que a dupla dividiu-se para desenvolver diferentes aspectos do jogo, segue os dois históricos das IA's usadas a fim de documentar o processo de criação da "Trilha dos Desafios". Todavia, apesar do uso de Inteligências Artificiais, os membros da equipe foram inteiramente responsáveis pela idealização do jogo, desde a definição de regras, interações com o usuário, design da interface - a exemplo da escolha de músicas, efeitos sonoros e animações -, participando ativamente da construção do Projeto Final, além dos testes de uso e solicitações de correção ao longo do seu desenvolvimento. Logo, as IAg's foram utilizadas apenas como ferramentas de execução, responsáveis por transformar em código as decisões e ideias definidas pela dupla. 
 
-    -> Histórico do ChatGPT, utilizado pela aluna Letícia Galvão dos Reis: 
-    -> Histórico do Claude, utilizado pela aluna Catarina Macêdo Cerqueira: https://claude.ai/share/767159a9-350f-4a04-8316-6dab47a34a97 
+    -> Histórico do ChatGPT, utilizado pela aluna Letícia Galvão dos Reis: https://chatgpt.com/share/e/6b030778-38fc-83e8-86b2-3df566f2755e 
+    -> Histórico do Claude, utilizado pela aluna Catarina Macêdo Cerqueira: https://claude.ai/share/767159a9-350f-4a04-8316-6dab47a34a97  
 
 -> Evidências de discussão do projeto / trabalho em dupla: 
-Plugins de IA generativa (IAg): o programa em python que compõem o jogo "Trilha dos Desafios" foi 100% gerado por IA, e o histórico do chatGPT está exportado no link: https://chatgpt.com/share/e/6b030778-38fc-83e8-86b2-3df566f2755e . Os membros da equipe foram responsáveis por definir as regras, requisitos, o design da interface (músicas, efeitos sonoros, animações) e da progressão de dificuldade, além dos testes de uso e das solicitações de correção. 
+   -> Idealização da animação do dado e teste de design no Canva.  
+
