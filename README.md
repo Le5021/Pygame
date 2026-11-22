@@ -17,5 +17,5 @@
 -> Histórico do Claude, utilizado pela aluna Catarina Macêdo Cerqueira: https://claude.ai/share/767159a9-350f-4a04-8316-6dab47a34a97  
 
 -> Evidências de discussão do projeto / trabalho em dupla: 
--> Idealização da animação do dado e teste de design no Canva.  
-
+-> Idealização da animação do dado e teste de design no Canva:  
+https://canva.link/f74bo10p2e2aaws
