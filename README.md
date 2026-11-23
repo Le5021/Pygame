@@ -6,6 +6,7 @@
 -> Como rodar o jogo: Deve-se baixar (ou clonar) o repositório completo do GitHub, mantendo o arquivo "Trilha dos Desafios.py" na mesma pasta das subpastas "assets/fontes" e "assets/sons". Em seguida, basta abrir o arquivo no VS Code e executá-lo clicando no botão "Run Python File".
 
 -> Endereço do vídeo de apresentação do jogo: https://youtu.be/94rALiQD-tY  
+-> Observação acerca do vídeo: Não foi possível gravar a apresentação do jogo executando o arquivo.py "Trilha dos Desafios.py" em fullscreen. Pedimos desculpa pelo transtorno, mas tal situação não compromete a gameplay, muito menos o entendimento do jogo. Assim, quando aberto localmente, o jogo apresenta-se em tela cheia e o usuário pode ter a experiência completa, conforme proposto pelo Projeto Final. 
 
 -> Descrição do Projeto Final: "Trilha dos Desafios" é um jogo de tabuleiro digital em 2D, desenvolvido em Python com a biblioteca Pygame. O jogo é feito para 1 ou 2 jogadores, que avançam em uma trilha de casas coloridas ao rolar o dado e enfrentam desafios ao parar em casas especiais: Complete o Ditado, Cálculo Matemático, Decifre o Enigma, Conecte as Cores e Organize os Blocos, cada um com um tempo limite para ser resolvido. Além das casas de desafio, há casas que fazem o jogador avançar, recuar ou perder a vez. Antes de começar a partida, cada jogador digita seu próprio nome, que é usado ao longo de todo o jogo. O projeto conta com trilha sonora, efeitos sonoros e animação de confete na tela de vitória, todos compostos e implementados especificamente para o jogo. 
 
